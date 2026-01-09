@@ -1,11 +1,14 @@
 const express = require('express');
 const axios = require('axios');
 const { createClient } = require('@supabase/supabase-js');
-app.use(express.static('public'));
 
+// 1. Сначала создаем приложение
 const app = express();
 
-// Инициализация Supabase
+// 2. Потом подключаем папку public (чтобы сайт открывался)
+app.use(express.static('public'));
+
+// 3. Потом инициализируем базу данных
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
 app.get('/', async (req, res) => {
