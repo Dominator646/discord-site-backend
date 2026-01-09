@@ -2,126 +2,42 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NeСкам | Вход в систему</title>
+    <title>NeСкам | Вход</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;900&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Outfit', sans-serif;
-            background-color: #05050a;
-            color: white;
-            height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0;
-            overflow: hidden;
-        }
-        .glass-card {
-            background: rgba(255, 255, 255, 0.01);
-            backdrop-filter: blur(25px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 3.5rem;
-            border-radius: 3rem;
-            text-align: center;
-            width: 100%;
-            max-width: 420px;
-            box-shadow: 0 50px 100px -20px rgba(0, 0, 0, 0.7);
-        }
-        .discord-btn {
-            background: linear-gradient(135deg, #5865F2, #4752C4);
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-        .discord-btn:hover {
-            transform: translateY(-5px) scale(1.02);
-            box-shadow: 0 20px 40px rgba(88, 101, 242, 0.4);
-        }
-        .discord-btn:active { transform: translateY(-1px); }
-        
-        .loader {
-            border: 3px solid rgba(255,255,255,0.1);
-            border-top: 3px solid #5865F2;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            animation: spin 1s linear infinite;
-            display: inline-block;
-            margin-right: 10px;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@900&display=swap" rel="stylesheet">
 </head>
-<body>
+<body class="bg-[#05050a] text-white flex items-center justify-center h-screen font-['Outfit']">
 
-    <div class="fixed top-0 left-0 w-full h-full -z-10">
-        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-violet-600/10 blur-[120px] rounded-full"></div>
-    </div>
-
-    <div class="glass-card">
-        <div class="mb-8">
-            <div class="w-20 h-20 bg-gradient-to-tr from-violet-600 to-indigo-600 rounded-3xl flex items-center justify-center mx-auto shadow-2xl">
-                <i class="fas fa-ticket-alt text-3xl text-white"></i>
-            </div>
-        </div>
-        
-        <h1 class="text-5xl font-black tracking-tighter mb-2 italic uppercase">NeСкам</h1>
-        <p class="text-slate-500 text-[10px] mb-12 uppercase tracking-[0.3em] font-bold">The Cinema Society Access</p>
-
-        <button id="login-btn" onclick="openAuthPopup()" class="discord-btn w-full py-5 rounded-2xl font-black flex items-center justify-center gap-4 text-lg">
-            <i class="fab fa-discord text-2xl"></i>
+    <div class="text-center p-10 border border-white/10 rounded-[3rem] bg-white/5 backdrop-blur-xl">
+        <h1 class="text-6xl mb-10 font-black italic tracking-tighter">NeСкам</h1>
+        <button onclick="startAuth()" class="bg-[#5865F2] px-10 py-5 rounded-2xl font-bold text-xl hover:scale-105 transition-all">
             ВОЙТИ ЧЕРЕЗ DISCORD
         </button>
-
-        <div id="loading-state" class="mt-8 hidden">
-            <div class="flex items-center justify-center text-slate-400 text-sm font-medium italic">
-                <div class="loader"></div>
-                Ждем завершения в окне...
-            </div>
-        </div>
     </div>
 
     <script>
-        // Если пользователь уже в системе — перекидываем в кабинет
-        if (localStorage.getItem('logged_user_id')) {
-            window.location.href = '/dashboard.html';
-        }
+        let authWindow;
 
-        function openAuthPopup() {
-            const width = 500, height = 750;
-            const left = (window.screen.width / 2) - (width / 2);
-            const top = (window.screen.height / 2) - (height / 2);
+        function startAuth() {
+            const url = "https://discord.com/api/oauth2/authorize?client_id=1431712036626104401&redirect_uri=https://discord-site-backend-production.up.railway.app&response_type=code&scope=identify";
+            authWindow = window.open(url, "auth", "width=500,height=750");
 
-            const authUrl = "https://discord.com/api/oauth2/authorize?client_id=1431712036626104401&redirect_uri=https://discord-site-backend-production.up.railway.app&response_type=code&scope=identify";
+            // Ждем сообщения от маленького окна
+            window.addEventListener('message', (event) => {
+                if (event.data === "auth_success") {
+                    window.location.href = "/dashboard.html";
+                }
+            });
 
-            // Скрываем кнопку, показываем лоадер
-            document.getElementById('login-btn').style.display = 'none';
-            document.getElementById('loading-state').classList.remove('hidden');
-
-            // Открываем маленькое окно
-            const popup = window.open(authUrl, "DiscordAuth", `width=${width},height=${height},top=${top},left=${left}`);
-
-            // ТАЙМЕР-НАБЛЮДАТЕЛЬ
-            const checkPopup = setInterval(() => {
-                // Если окно закрылось (само сервером или пользователем)
-                if (popup.closed) {
-                    clearInterval(checkPopup);
-                    
-                    // Проверяем, появились ли данные в localStorage (их туда записал сервер перед закрытием окна)
-                    const userId = localStorage.getItem('logged_user_id');
-                    
-                    if (userId) {
-                        // Всё супер, летим в кабинет
-                        window.location.href = '/dashboard.html';
-                    } else {
-                        // Если окно закрыли, а ID нет — значит ошибка или отмена
-                        document.getElementById('login-btn').style.display = 'flex';
-                        document.getElementById('loading-state').classList.add('hidden');
-                        alert("Авторизация не была завершена.");
+            // Резервный таймер: если окно закрылось, проверяем вход
+            const timer = setInterval(() => {
+                if (authWindow.closed) {
+                    clearInterval(timer);
+                    if (localStorage.getItem('logged_user_id')) {
+                        window.location.href = "/dashboard.html";
                     }
                 }
-            }, 1000); // Проверка каждую секунду
+            }, 1000);
         }
     </script>
 </body>
