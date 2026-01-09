@@ -62,26 +62,30 @@ app.get('/', async (req, res) => {
 
         console.log('Данные успешно сохранены в Supabase');
 
-        // 4. ЗАКРЫТИЕ ОКНА И ПЕРЕДАЧА ДАННЫХ НА ФРОНТЕНД
-        // Этот HTML выполнится в маленьком окне: отправит сигнал родителю и закроется
+        // 4. ЗАКРЫТИЕ ОКНА И ПЕРЕХОД ОСНОВНОГО САЙТА
         res.send(`
             <html>
-            <body style="background: #0f172a; color: white; display: flex; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif;">
+            <body style="background: #05050a; color: white; display: flex; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif;">
                 <div style="text-align: center;">
-                    <p>Авторизация успешна! Входим...</p>
+                    <p style="font-size: 18px;">Авторизация успешна...</p>
+                    <div style="border: 3px solid rgba(255,255,255,0.1); border-top: 3px solid #5865F2; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 20px auto;"></div>
                 </div>
+                <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
                 <script>
-                    // Передаем данные в основное окно
                     if (window.opener) {
-                        window.opener.postMessage({ 
-                            type: 'AUTH_SUCCESS', 
-                            userId: '${user.id}',
-                            username: '${user.username}',
-                            avatar: '${avatarUrl}'
-                        }, "*");
+                        // 1. Сохраняем ID пользователя в localStorage основного окна
+                        window.opener.localStorage.setItem('logged_user_id', '${user.id}');
+                        
+                        // 2. Перенаправляем основное окно на страницу личного кабинета
+                        // ВАЖНО: Укажи здесь путь к файлу твоего профиля/дашборда
+                        window.opener.location.href = '/dashboard.html'; 
+                        
+                        // 3. Закрываем текущее маленькое окно
+                        window.close();
+                    } else {
+                        // Если вдруг окно открыто не как popup, просто редиректим тут
+                        window.location.href = '/dashboard.html';
                     }
-                    // Закрываем маленькое окно через полсекунды
-                    setTimeout(() => { window.close(); }, 500);
                 </script>
             </body>
             </html>
