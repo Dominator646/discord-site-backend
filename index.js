@@ -8,23 +8,29 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
-app.get('/', async (req, res) => {
-    const { code } = req.query;
+// 1. ГЛАВНАЯ СТРАНИЦА (Твой профиль, монетки, аватарка)
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
+});
 
-    // Если кода нет, отдаем посадочную страницу
-    if (!code) {
-        return res.sendFile(path.join(__dirname, 'public', 'index.html'));
-    }
+// 2. СТРАНИЦА ВХОДА (Кнопка "Войти через Дискорд")
+app.get('/login', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'login.html'));
+});
+
+// 3. ОБРАБОТКА ВХОДА (То самое маленькое окошко)
+app.get('/auth/callback', async (req, res) => {
+    const { code } = req.query;
+    if (!code) return res.redirect('/login');
 
     try {
-        // 1. Получаем данные от Discord
         const tokenResponse = await axios.post('https://discord.com/api/oauth2/token', 
             new URLSearchParams({
                 client_id: process.env.DISCORD_CLIENT_ID,
                 client_secret: process.env.DISCORD_CLIENT_SECRET,
                 code: code,
                 grant_type: 'authorization_code',
-                redirect_uri: 'https://discord-site-backend-production.up.railway.app',
+                redirect_uri: 'https://discord-site-backend-production.up.railway.app/auth/callback',
                 scope: 'identify',
             }).toString(), 
             { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
@@ -37,36 +43,28 @@ app.get('/', async (req, res) => {
         const user = userResponse.data;
         const avatarUrl = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`;
 
-        // 2. Пишем в Supabase (без await, чтобы не ждать ответа и закрыть окно БЫСТРЕЕ)
-        supabase.from('users_data').upsert({ 
+        // Запись в базу
+        await supabase.from('users_data').upsert({ 
             id: String(user.id), 
             username: user.username, 
             avatar: avatarUrl,
             last_login: new Date().toISOString()
-        }).then(({error}) => { if(error) console.log("DB Error:", error.message) });
+        });
 
-        // 3. ФИНАЛЬНЫЙ СКРИПТ (САМЫЙ ВАЖНЫЙ)
-        // Мы передаем данные через куки и localStorage и ПРИНУДИТЕЛЬНО закрываем окно
+        // СКРИПТ ЗАКРЫТИЯ МАЛЕНЬКОГО ОКНА
         res.send(`
-            <html>
-            <body style="background: #05050a;">
-                <script>
-                    // Передаем сигнал родителю (большому окну)
-                    if (window.opener) {
-                        window.opener.localStorage.setItem('logged_user_id', '${user.id}');
-                        window.opener.postMessage("auth_success", "*");
-                        window.close(); // ЗАКРЫВАЕМ
-                    }
-                    // Резервный вариант, если opener потерян
-                    localStorage.setItem('logged_user_id', '${user.id}');
-                    setTimeout(() => { window.close(); }, 100);
-                </script>
-            </body>
-            </html>
+            <script>
+                localStorage.setItem('logged_user_id', '${user.id}');
+                localStorage.setItem('user_name', '${user.username}');
+                localStorage.setItem('user_avatar', '${avatarUrl}');
+                if (window.opener) {
+                    window.opener.postMessage("login_success", "*");
+                }
+                window.close();
+            </script>
         `);
-
     } catch (err) {
-        console.error("Auth error:", err.message);
+        console.error(err);
         res.send("<script>window.close();</script>");
     }
 });
