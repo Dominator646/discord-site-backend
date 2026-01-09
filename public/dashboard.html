@@ -4,41 +4,68 @@
     <meta charset="UTF-8">
     <title>NeСкам | Личный кабинет</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;800&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Outfit', sans-serif; background: #05050a; color: white; }
+        body { font-family: 'Outfit', sans-serif; background: #05050a; color: white; min-height: 100vh; }
         .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); }
     </style>
 </head>
 <body class="p-8">
-    <nav class="flex justify-between items-center mb-12">
-        <h1 class="text-2xl font-black tracking-tighter">NeСкам</h1>
-        <div id="user-display" class="glass flex items-center gap-4 p-2 pr-6 rounded-full">
-            <img id="user-avatar" src="" class="w-10 h-10 rounded-full border-2 border-violet-500">
-            <span id="user-name" class="font-bold">Загрузка...</span>
+    <nav class="flex justify-between items-center max-w-6xl mx-auto mb-16">
+        <h1 class="text-3xl font-black italic tracking-tighter">NeСкам</h1>
+        <div class="flex items-center gap-4 glass p-2 pr-6 rounded-full">
+            <img id="avatar" src="" class="w-10 h-10 rounded-full border border-violet-500/50 shadow-lg shadow-violet-500/20">
+            <div>
+                <p id="username" class="text-sm font-bold text-white leading-none"></p>
+                <p class="text-[10px] text-violet-400 uppercase tracking-widest mt-1">Киноман</p>
+            </div>
+            <button onclick="logout()" class="ml-4 text-slate-500 hover:text-white transition-colors text-xs uppercase font-bold tracking-tighter">Выйти</button>
         </div>
     </nav>
 
-    <div class="max-w-4xl mx-auto">
-        <h2 class="text-4xl font-bold mb-8">Ваши монетки</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="glass p-8 rounded-3xl">
-                <p class="text-violet-300 uppercase text-xs tracking-widest mb-2">Баланс монет</p>
-                <p class="text-5xl font-black">1,250 <span class="text-xl text-slate-500">🪙</span></p>
-            </div>
+    <main class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div class="glass p-8 rounded-[2rem] border-t border-white/10">
+            <p class="text-slate-400 text-xs uppercase tracking-widest mb-2">Ваш баланс</p>
+            <h3 class="text-5xl font-black">100 <span class="text-xl text-yellow-500">🪙</span></h3>
         </div>
-    </div>
+        <div class="md:col-span-2 glass p-8 rounded-[2rem] flex items-center justify-center border-dashed border-2 border-white/5">
+            <p class="text-slate-500 italic">Тут скоро будет колесо фортуны...</p>
+        </div>
+    </main>
 
     <script>
-        // При загрузке страницы достаем ID из памяти
-        const userId = localStorage.getItem('logged_user_id');
-        if (!userId) {
-            window.location.href = '/'; // Если не залогинен — на главную
-        } else {
-            // Здесь можно сделать запрос к Supabase, чтобы получить свежие данные
-            // Для теста просто выведем ID в консоль
-            document.getElementById('user-name').innerText = "ID: " + userId;
+        // Данные Supabase (замени на свои из переменных Railway)
+        const SUPABASE_URL = "ТВОЙ_URL"; 
+        const SUPABASE_KEY = "ТВОЙ_KEY";
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        async function init() {
+            const userId = localStorage.getItem('logged_user_id');
+            if (!userId) {
+                window.location.href = '/';
+                return;
+            }
+
+            // Грузим данные из базы
+            const { data, error } = await supabase
+                .from('users_data')
+                .select('*')
+                .eq('id', userId)
+                .single();
+
+            if (data) {
+                document.getElementById('avatar').src = data.avatar;
+                document.getElementById('username').innerText = data.username;
+            }
         }
+
+        function logout() {
+            localStorage.removeItem('logged_user_id');
+            window.location.href = '/';
+        }
+
+        init();
     </script>
 </body>
 </html>
