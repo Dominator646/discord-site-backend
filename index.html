@@ -3,6 +3,768 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeСкам - Киноклуб друзей</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-purple: #8a2be2;
+            --primary-cyan: #00e5ff;
+            --electric-blue: #0066ff;
+            --deep-purple: #4b0082;
+            --dark-bg: #0a0a14;
+            --card-bg: rgba(18, 18, 30, 0.9);
+            --text-light: #f0f0f0;
+            --text-muted: #a0a0c0;
+            --discord-blurple: #5865F2;
+            --discord-blurple-hover: #4752c4;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--dark-bg);
+            color: var(--text-light);
+            min-height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Фон с градиентами и эффектами */
+        .background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        .gradient-bg {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(138, 43, 226, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 80% 70%, rgba(0, 229, 255, 0.1) 0%, transparent 40%),
+                radial-gradient(circle at 40% 80%, rgba(106, 13, 173, 0.2) 0%, transparent 40%),
+                linear-gradient(135deg, #0a0a14 0%, #15152a 100%);
+        }
+
+        /* Эффект пленки */
+        .film-grain {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='1' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+            mix-blend-mode: overlay;
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        /* Символика колеса фортуны */
+        .wheel-elements {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .wheel-piece {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(138, 43, 226, 0.05);
+            border: 1px solid rgba(138, 43, 226, 0.2);
+            filter: blur(8px);
+        }
+
+        .wheel-piece:nth-child(1) {
+            width: 300px;
+            height: 300px;
+            top: -150px;
+            right: -150px;
+        }
+
+        .wheel-piece:nth-child(2) {
+            width: 400px;
+            height: 400px;
+            bottom: -200px;
+            left: -200px;
+        }
+
+        .wheel-piece:nth-child(3) {
+            width: 200px;
+            height: 200px;
+            top: 50%;
+            left: 10%;
+        }
+
+        .wheel-segment {
+            position: absolute;
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: conic-gradient(
+                transparent 0deg 90deg,
+                rgba(0, 229, 255, 0.1) 90deg 180deg,
+                transparent 180deg 270deg,
+                rgba(138, 43, 226, 0.1) 270deg 360deg
+            );
+            top: 20%;
+            right: 15%;
+            animation: rotateSlow 40s linear infinite;
+        }
+
+        /* Неоновые акценты */
+        .neon-accent {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(40px);
+            opacity: 0.5;
+        }
+
+        .neon-accent.purple {
+            width: 200px;
+            height: 200px;
+            background: var(--primary-purple);
+            top: 10%;
+            left: 5%;
+        }
+
+        .neon-accent.cyan {
+            width: 150px;
+            height: 150px;
+            background: var(--primary-cyan);
+            bottom: 15%;
+            right: 10%;
+        }
+
+        /* Контейнер для основного контента */
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Карточка входа */
+        .login-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 60px 50px;
+            width: 100%;
+            max-width: 480px;
+            box-shadow: 
+                0 20px 60px rgba(0, 0, 0, 0.5),
+                0 0 0 1px rgba(255, 255, 255, 0.05),
+                0 0 80px rgba(138, 43, 226, 0.1);
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        /* Эффект виньетки на карточке */
+        .login-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, transparent 30%, rgba(0, 0, 0, 0.5) 100%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .login-content {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+        }
+
+        /* Заголовок */
+        .logo {
+            font-size: 4.5rem;
+            font-weight: 800;
+            letter-spacing: 6px;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, var(--primary-purple) 0%, var(--primary-cyan) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-transform: uppercase;
+            position: relative;
+            display: inline-block;
+        }
+
+        .logo::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 10%;
+            width: 80%;
+            height: 4px;
+            background: linear-gradient(90deg, transparent, var(--primary-cyan), transparent);
+            border-radius: 2px;
+        }
+
+        /* Подзаголовок */
+        .subtitle {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            margin-bottom: 50px;
+            line-height: 1.6;
+            font-weight: 300;
+            letter-spacing: 0.5px;
+        }
+
+        /* Кнопка Discord */
+        .discord-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            background-color: var(--discord-blurple);
+            color: white;
+            border: none;
+            border-radius: 16px;
+            padding: 22px 30px;
+            font-size: 1.25rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+            letter-spacing: 0.5px;
+            box-shadow: 0 10px 30px rgba(88, 101, 242, 0.3);
+        }
+
+        .discord-btn:hover {
+            background-color: var(--discord-blurple-hover);
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(88, 101, 242, 0.4);
+        }
+
+        .discord-btn:active {
+            transform: translateY(-2px);
+        }
+
+        .discord-btn i {
+            font-size: 1.8rem;
+        }
+
+        /* Эффект наведения на кнопке */
+        .discord-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.7s ease;
+        }
+
+        .discord-btn:hover::before {
+            left: 100%;
+        }
+
+        /* Дополнительная информация */
+        .info-text {
+            margin-top: 40px;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+            max-width: 350px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .highlight {
+            color: var(--primary-cyan);
+            font-weight: 500;
+        }
+
+        /* Анимации */
+        @keyframes rotateSlow {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.5; }
+            50% { opacity: 0.8; }
+            100% { opacity: 0.5; }
+        }
+
+        .pulse {
+            animation: pulse 3s infinite ease-in-out;
+        }
+
+        /* Адаптивность */
+        @media (max-width: 600px) {
+            .login-card {
+                padding: 40px 30px;
+                max-width: 90%;
+            }
+            
+            .logo {
+                font-size: 3.5rem;
+                letter-spacing: 4px;
+            }
+            
+            .subtitle {
+                font-size: 1.1rem;
+                margin-bottom: 40px;
+            }
+            
+            .discord-btn {
+                padding: 18px 20px;
+                font-size: 1.1rem;
+            }
+        }
+
+        /* Скрытые элементы */
+        .hidden {
+            display: none;
+        }
+
+        /* Окно профиля (скрыто до входа) */
+        .profile-container {
+            max-width: 800px;
+            width: 90%;
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 50px;
+            box-shadow: 
+                0 20px 60px rgba(0, 0, 0, 0.5),
+                0 0 0 1px rgba(255, 255, 255, 0.05),
+                0 0 80px rgba(138, 43, 226, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .profile-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at top right, rgba(138, 43, 226, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .profile-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 40px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .profile-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 4px solid var(--primary-purple);
+            object-fit: cover;
+            margin-right: 30px;
+            box-shadow: 0 0 30px rgba(138, 43, 226, 0.5);
+        }
+
+        .profile-info h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, var(--primary-purple) 0%, var(--primary-cyan) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .profile-info p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            letter-spacing: 0.5px;
+        }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(138, 43, 226, 0.3);
+        }
+
+        .stat-card h3 {
+            font-size: 1rem;
+            color: var(--text-muted);
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary-cyan);
+            display: flex;
+            align-items: center;
+        }
+
+        .stat-value i {
+            margin-right: 15px;
+            font-size: 1.8rem;
+        }
+
+        .next-event {
+            background: rgba(138, 43, 226, 0.1);
+            border-radius: 16px;
+            padding: 30px;
+            border: 1px solid rgba(138, 43, 226, 0.3);
+            position: relative;
+            z-index: 1;
+        }
+
+        .next-event h2 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            color: var(--primary-cyan);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .next-event p {
+            color: var(--text-muted);
+            line-height: 1.6;
+            font-size: 1.1rem;
+        }
+
+        .logout-btn {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-muted);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 12px 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            z-index: 2;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-light);
+        }
+    </style>
+</head>
+<body>
+    <!-- Фон и декоративные элементы -->
+    <div class="background">
+        <div class="gradient-bg"></div>
+        <div class="wheel-elements">
+            <div class="wheel-piece"></div>
+            <div class="wheel-piece"></div>
+            <div class="wheel-piece"></div>
+            <div class="wheel-segment"></div>
+        </div>
+        <div class="neon-accent purple"></div>
+        <div class="neon-accent cyan"></div>
+        <div class="film-grain"></div>
+    </div>
+
+    <!-- Контейнер для контента -->
+    <div class="container">
+        <!-- Экран входа (изначально показан) -->
+        <div id="loginScreen" class="login-card">
+            <div class="login-content">
+                <h1 class="logo">NeСкам</h1>
+                <p class="subtitle">Суббота. Друзья. Случайный фильм.</p>
+                
+                <button id="discordLoginBtn" class="discord-btn">
+                    <i class="fab fa-discord"></i>
+                    Войти через Discord
+                </button>
+                
+                <p class="info-text">
+                    <span class="highlight">Киноклуб друзей:</span> каждую субботу мы собираемся, чтобы вместе посмотреть случайно выбранный фильм из наших коллекций. Присоединяйся!
+                </p>
+            </div>
+        </div>
+
+        <!-- Экран профиля (изначально скрыт) -->
+        <div id="profileScreen" class="profile-container hidden">
+            <button id="logoutBtn" class="logout-btn">
+                <i class="fas fa-sign-out-alt"></i> Выйти
+            </button>
+            
+            <div class="profile-header">
+                <img id="userAvatar" class="profile-avatar" src="https://cdn.discordapp.com/embed/avatars/0.png" alt="Аватар пользователя">
+                <div class="profile-info">
+                    <h1 id="userName">Пользователь Discord</h1>
+                    <p id="userTag">#0000</p>
+                </div>
+            </div>
+            
+            <div class="stats-container">
+                <div class="stat-card">
+                    <h3>Монетки</h3>
+                    <div class="stat-value">
+                        <i class="fas fa-coins"></i>
+                        <span id="userCoins">250</span>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <h3>Добавлено фильмов</h3>
+                    <div class="stat-value">
+                        <i class="fas fa-film"></i>
+                        <span id="userMovies">12</span>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <h3>Участий в NeСкам</h3>
+                    <div class="stat-value">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span id="userEvents">8</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="next-event">
+                <h2><i class="fas fa-clock"></i> Следующий NeСкам</h2>
+                <p>Следующая встреча киноклуба состоится <strong>в эту субботу в 20:00</strong>. Фильм будет выбран случайным образом за час до начала. Убедись, что твой фильм добавлен в колесо фортуны!</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно Discord OAuth -->
+    <div id="discordOAuthModal" class="hidden" style="
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.85);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        backdrop-filter: blur(10px);
+    ">
+        <div style="
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        ">
+            <h2 style="margin-bottom: 20px; color: var(--primary-cyan);">Авторизация через Discord</h2>
+            <p style="color: var(--text-muted); margin-bottom: 30px; line-height: 1.6;">
+                Вы будете перенаправлены на страницу авторизации Discord. После подтверждения, вы автоматически вернетесь на сайт NeСкам.
+            </p>
+            <div style="display: flex; justify-content: center; gap: 20px;">
+                <button id="confirmOAuth" style="
+                    background: var(--discord-blurple);
+                    color: white;
+                    border: none;
+                    border-radius: 12px;
+                    padding: 15px 30px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                ">Продолжить</button>
+                <button id="cancelOAuth" style="
+                    background: rgba(255, 255, 255, 0.05);
+                    color: var(--text-muted);
+                    border: 1px solid rgba(255, 255, 255, 0.1);
+                    border-radius: 12px;
+                    padding: 15px 30px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                ">Отмена</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Элементы DOM
+            const loginScreen = document.getElementById('loginScreen');
+            const profileScreen = document.getElementById('profileScreen');
+            const discordLoginBtn = document.getElementById('discordLoginBtn');
+            const logoutBtn = document.getElementById('logoutBtn');
+            const discordOAuthModal = document.getElementById('discordOAuthModal');
+            const confirmOAuth = document.getElementById('confirmOAuth');
+            const cancelOAuth = document.getElementById('cancelOAuth');
+            
+            // Элементы профиля
+            const userName = document.getElementById('userName');
+            const userTag = document.getElementById('userTag');
+            const userAvatar = document.getElementById('userAvatar');
+            const userCoins = document.getElementById('userCoins');
+            const userMovies = document.getElementById('userMovies');
+            const userEvents = document.getElementById('userEvents');
+            
+            // Проверяем, есть ли данные о пользователе в localStorage
+            // В реальном приложении здесь должна быть проверка токена/сессии
+            const userData = JSON.parse(localStorage.getItem('nescam_user'));
+            
+            if (userData) {
+                // Если пользователь уже авторизован, показываем профиль
+                showProfileScreen(userData);
+            } else {
+                // Иначе показываем экран входа
+                loginScreen.classList.remove('hidden');
+                profileScreen.classList.add('hidden');
+            }
+            
+            // Обработчик кнопки входа через Discord
+            discordLoginBtn.addEventListener('click', function() {
+                // Показываем модальное окно OAuth
+                discordOAuthModal.classList.remove('hidden');
+            });
+            
+            // Обработчик кнопки подтверждения OAuth
+            confirmOAuth.addEventListener('click', async function() {
+                // Имитация OAuth процесса
+                discordOAuthModal.classList.add('hidden');
+                
+                // Показываем загрузку
+                discordLoginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Авторизация...';
+                discordLoginBtn.disabled = true;
+                
+                // Имитируем задержку запроса к Discord OAuth
+                setTimeout(async () => {
+                    // Имитация получения данных пользователя от Discord
+                    // В реальном приложении здесь будет реальный OAuth flow
+                    const mockDiscordUser = {
+                        id: '123456789',
+                        username: 'Киноман',
+                        discriminator: '1337',
+                        avatar: 'https://cdn.discordapp.com/embed/avatars/3.png',
+                        coins: 250,
+                        moviesAdded: 12,
+                        eventsAttended: 8
+                    };
+                    
+                    // Имитация отправки данных на Supabase
+                    await sendToSupabase(mockDiscordUser);
+                    
+                    // Сохраняем данные в localStorage
+                    localStorage.setItem('nescam_user', JSON.stringify(mockDiscordUser));
+                    
+                    // Показываем профиль
+                    showProfileScreen(mockDiscordUser);
+                    
+                    // Восстанавливаем кнопку Discord
+                    discordLoginBtn.innerHTML = '<i class="fab fa-discord"></i> Войти через Discord';
+                    discordLoginBtn.disabled = false;
+                }, 1500);
+            });
+            
+            // Обработчик отмены OAuth
+            cancelOAuth.addEventListener('click', function() {
+                discordOAuthModal.classList.add('hidden');
+            });
+            
+            // Обработчик выхода
+            logoutBtn.addEventListener('click', function() {
+                // Удаляем данные пользователя
+                localStorage.removeItem('nescam_user');
+                
+                // Показываем экран входа
+                loginScreen.classList.remove('hidden');
+                profileScreen.classList.add('hidden');
+            });
+            
+            // Функция показа экрана профиля
+            function showProfileScreen(userData) {
+                // Обновляем данные профиля
+                userName.textContent = userData.username;
+                userTag.textContent = `#${userData.discriminator}`;
+                userAvatar.src = userData.avatar;
+                userCoins.textContent = userData.coins;
+                userMovies.textContent = userData.moviesAdded;
+                userEvents.textContent = userData.eventsAttended;
+                
+                // Показываем экран профиля
+                loginScreen.classList.add('hidden');
+                profileScreen.classList.remove('hidden');
+            }
+            
+            // Функция имитации отправки данных на Supabase
+            async function sendToSupabase(userData) {
+                // В реальном приложении здесь будет fetch запрос к вашему серверу на Railway,
+                // который затем отправит данные в Supabase
+                
+                console.log('Отправка данных на Supabase:', userData);
+                
+                // Имитация успешной отправки
+                return new Promise(resolve => {
+                    setTimeout(() => {
+                        console.log('Данные успешно отправлены на Supabase');
+                        resolve(true);
+                    }, 800);
+                });
+            }
+            
+            // Дополнительный визуальный эффект при наведении на кнопку Discord
+            discordLoginBtn.addEventListener('mouseenter', function() {
+                const wheelSegment = document.querySelector('.wheel-segment');
+                wheelSegment.style.animationDuration = '10s';
+            });
+            
+            discordLoginBtn.addEventListener('mouseleave', function() {
+                const wheelSegment = document.querySelector('.wheel-segment');
+                wheelSegment.style.animationDuration = '40s';
+            });
+        });
+    </script>
+</body>
+</html><!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NeСкам - Вход</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
