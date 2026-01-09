@@ -1,32 +1,178 @@
-<div class="min-h-screen bg-[#36393f] flex items-center justify-center font-sans text-white">
-    <div class="bg-[#2f3136] p-10 rounded-2xl shadow-2xl w-96 text-center border border-white/5">
-        <img src="https://assets-global.website-files.com/6257adef93467e01281091e2/636e0a6a49cf127bf92de1e2_icon_clyde_blurple_RGB.png" 
-             width="80" class="mx-auto mb-6">
-        <h1 class="text-2xl font-bold mb-2">Добро пожаловать!</h1>
-        <p class="text-gray-400 mb-8 text-sm">Мы так рады тебя видеть снова!</p>
-        
-        <button id="loginBtn" class="w-full bg-[#5865f2] hover:bg-[#4752c4] py-3 rounded-md font-medium transition-all duration-200 flex items-center justify-center gap-3">
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeСкам - Вход</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* Общий стиль: темный, кинематографический */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a0033 50%, #000033 100%);
+            color: #ffffff;
+            overflow: hidden;
+            position: relative;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Эффект зерна пленки и виньетки */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, transparent 50%, rgba(0,0,0,0.8) 100%);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        body::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><defs><filter id="grain"><feTurbulence baseFrequency="0.9" numOctaves="4" stitchTiles="stitch"/><feColorMatrix values="0"/></filter></defs><rect width="100%" height="100%" filter="url(%23grain)" opacity="0.1"/></svg>');
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* Абстрактные формы: размытые сегменты колеса фортуны */
+        .wheel-segment {
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: conic-gradient(from 0deg, rgba(138, 43, 226, 0.2) 0deg, rgba(0, 255, 255, 0.2) 120deg, rgba(0, 0, 255, 0.2) 240deg);
+            filter: blur(20px);
+            animation: spin 20s linear infinite;
+            opacity: 0.3;
+        }
+
+        .wheel-segment:nth-child(1) { top: 10%; left: 10%; }
+        .wheel-segment:nth-child(2) { top: 60%; right: 10%; }
+        .wheel-segment:nth-child(3) { bottom: 10%; left: 50%; transform: translateX(-50%); }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* Центральная карточка */
+        .login-card {
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid rgba(138, 43, 226, 0.5);
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 0 50px rgba(138, 43, 226, 0.3);
+            max-width: 400px;
+            width: 90%;
+            position: relative;
+            z-index: 2;
+            backdrop-filter: blur(10px);
+        }
+
+        /* Заголовок */
+        .title {
+            font-size: 3rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            margin-bottom: 10px;
+            text-shadow: 0 0 20px rgba(138, 43, 226, 0.8);
+        }
+
+        /* Подзаголовок */
+        .subtitle {
+            font-size: 1.2rem;
+            font-weight: 400;
+            letter-spacing: 0.05em;
+            margin-bottom: 30px;
+            color: #cccccc;
+        }
+
+        /* Кнопка */
+        .discord-btn {
+            background: linear-gradient(45deg, #5865f2, #7289da);
+            border: none;
+            border-radius: 10px;
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #ffffff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 20px rgba(88, 101, 242, 0.5);
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .discord-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(88, 101, 242, 0.8);
+        }
+
+        .discord-btn img {
+            width: 24px;
+            height: 24px;
+        }
+
+        /* Адаптивность */
+        @media (max-width: 600px) {
+            .title { font-size: 2.5rem; }
+            .subtitle { font-size: 1rem; }
+            .login-card { padding: 30px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Абстрактные элементы колеса -->
+    <div class="wheel-segment"></div>
+    <div class="wheel-segment"></div>
+    <div class="wheel-segment"></div>
+
+    <!-- Центральная карточка входа -->
+    <div class="login-card">
+        <h1 class="title">NeСкам</h1>
+        <p class="subtitle">Суббота. Друзья. Случайный фильм.</p>
+        <button class="discord-btn" id="discord-login">
+            <img src="https://discord.com/assets/1f0bfc0865d324c2587920a7d80c609b.png" alt="Discord">
             Войти через Discord
         </button>
     </div>
-</div>
 
-<div id="dashboard" class="hidden min-h-screen bg-[#36393f] text-white p-8">
-    <nav class="max-w-4xl mx-auto flex justify-between items-center mb-12">
-        <div class="flex items-center gap-4">
-            <img id="userAvatar" class="rounded-full w-12 h-12 border-2 border-[#5865f2]">
-            <span id="userName" class="text-xl font-bold"></span>
-        </div>
-        <button id="logoutBtn" class="text-gray-400 hover:text-white">Выйти</button>
-    </nav>
-    
-    <div class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div class="bg-[#2f3136] p-6 rounded-xl border border-white/5">
-            <p class="text-gray-400 text-sm uppercase font-bold mb-2">Ваш баланс</p>
-            <div class="flex items-center gap-2">
-                <span class="text-3xl font-mono text-yellow-400" id="userCoins">0</span>
-                <span class="text-yellow-400">🪙</span>
-            </div>
-        </div>
-    </div>
-</div>
+    <script>
+        // Конфигурация Discord OAuth
+        const CLIENT_ID = 'YOUR_DISCORD_CLIENT_ID'; // Замените на ваш client ID из приложения 0AUS
+        const REDIRECT_URI = 'https://your-railway-server.com/auth/discord/callback'; // Замените на ваш redirect URI на Railway
+        const SCOPE = 'identify'; // Для получения базовых данных пользователя
+
+        // Функция для открытия popup
+        document.getElementById('discord-login').addEventListener('click', () => {
+            const authUrl = `https://discord.com/api/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=code&scope=${SCOPE}`;
+            const popup = window.open(authUrl, 'discord-oauth', 'width=500,height=700');
+
+            // Проверяем, закрыт ли popup (для обработки после авторизации)
+            const checkClosed = setInterval(() => {
+                if (popup.closed) {
+                    clearInterval(checkClosed);
+                    // После закрытия popup, перенаправляем на главную (предполагаем, что сервер уже обработал данные)
+                    window.location.href = '/main.html'; // Замените на ваш URL главной страницы
+                }
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
