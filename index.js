@@ -4,28 +4,21 @@ const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
 
-// 1. Проверяем переменные перед стартом
-if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
-    console.error('ОШИБКА: Не заданы SUPABASE_URL или SUPABASE_ANON_KEY в Variables!');
-    process.exit(1);
-}
-
+// Инициализация Supabase
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
-// Главный маршрут для OAuth2
 app.get('/', async (req, res) => {
-    console.log('Получен запрос на вход:', req.query); // Логируем запрос
-
     const { code } = req.query;
 
+    // Если кода нет (просто зашли на URL бэкенда)
     if (!code) {
-        return res.send("Бэкенд работает! Но кода авторизации нет. Заходи с главной страницы.");
+        return res.status(400).send("Ошибка: Код авторизации отсутствует.");
     }
 
     try {
-        console.log('Меняем код на токен...');
-        
-        // Обмениваем код на токен
+        console.log('--- Начинаем процесс авторизации ---');
+
+        // 1. Обмениваем временный код на Access Token
         const tokenResponse = await axios.post(
             'https://discord.com/api/oauth2/token',
             new URLSearchParams({
@@ -33,53 +26,81 @@ app.get('/', async (req, res) => {
                 client_secret: process.env.DISCORD_CLIENT_SECRET,
                 code: code,
                 grant_type: 'authorization_code',
-                // ВНИМАНИЕ: Этот URI должен совпадать с тем, что в Discord Portal буква в букву
-                redirect_uri: 'https://discord-site-backend-production.up.railway.app', 
+                redirect_uri: 'https://discord-site-backend-production.up.railway.app',
                 scope: 'identify',
             }).toString(),
-            {
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-            }
+            { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
         );
 
         const accessToken = tokenResponse.data.access_token;
-        console.log('Токен получен. Запрашиваем данные юзера...');
 
-        // Получаем данные пользователя
+        // 2. Запрашиваем данные пользователя у Discord
         const userResponse = await axios.get('https://discord.com/api/users/@me', {
             headers: { Authorization: `Bearer ${accessToken}` }
         });
 
         const user = userResponse.data;
-        console.log(`Пользователь найден: ${user.username} (${user.id})`);
+        const avatarUrl = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`;
 
-        // Сохраняем в Supabase
-        const { error } = await supabase
+        console.log(`Пользователь получен: ${user.username}`);
+
+        // 3. ОТПРАВКА ДАННЫХ В SUPABASE
+        // Используем upsert: если пользователя нет - создаст, если есть - обновит ник и аватар
+        const { error: supabaseError } = await supabase
             .from('users_data')
             .upsert({ 
                 id: user.id, 
                 username: user.username, 
-                avatar: `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`,
+                avatar: avatarUrl,
                 last_login: new Date()
-            });
+            }, { onConflict: 'id' });
 
-        if (error) {
-            console.error('Ошибка записи в Supabase:', error);
-            return res.send("Ошибка базы данных.");
+        if (supabaseError) {
+            console.error('Ошибка Supabase:', supabaseError);
+            throw new Error('Ошибка при сохранении в базу данных');
         }
 
-        // УСПЕХ: Перебрасываем на красивую страницу (Frontend)
-        // Замени ссылку ниже на свой GitHub Pages или где у тебя лежит index.html
-        res.redirect(`https://dominator646.github.io/discord-site-frontend/?user_id=${user.id}`);
+        console.log('Данные успешно сохранены в Supabase');
+
+        // 4. ЗАКРЫТИЕ ОКНА И ПЕРЕДАЧА ДАННЫХ НА ФРОНТЕНД
+        // Этот HTML выполнится в маленьком окне: отправит сигнал родителю и закроется
+        res.send(`
+            <html>
+            <body style="background: #0f172a; color: white; display: flex; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif;">
+                <div style="text-align: center;">
+                    <p>Авторизация успешна! Входим...</p>
+                </div>
+                <script>
+                    // Передаем данные в основное окно
+                    if (window.opener) {
+                        window.opener.postMessage({ 
+                            type: 'AUTH_SUCCESS', 
+                            userId: '${user.id}',
+                            username: '${user.username}',
+                            avatar: '${avatarUrl}'
+                        }, "*");
+                    }
+                    // Закрываем маленькое окно через полсекунды
+                    setTimeout(() => { window.close(); }, 500);
+                </script>
+            </body>
+            </html>
+        `);
 
     } catch (error) {
         console.error('Критическая ошибка:', error.response ? error.response.data : error.message);
-        res.status(500).send(`Ошибка авторизации: ${error.message}`);
+        res.status(500).send(`
+            <div style="background: #0f172a; color: #ff4d4d; padding: 20px; font-family: sans-serif;">
+                <h3>Ошибка авторизации</h3>
+                <p>${error.message}</p>
+                <button onclick="window.close()">Закрыть это окно</button>
+            </div>
+        `);
     }
 });
 
-// ВАЖНО: Слушаем порт, который дает Railway
+// Запуск сервера
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Сервер запущен на порту ${PORT}`);
+    console.log(`Сервер NeСкам запущен на порту ${PORT}`);
 });
