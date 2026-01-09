@@ -66,28 +66,28 @@ app.get('/', async (req, res) => {
 
         console.log('Данные успешно сохранены в Supabase');
 
-        // 4. ЗАКРЫТИЕ ОКНА И ПЕРЕХОД ОСНОВНОГО САЙТА
+        // 4. ЗАКРЫТИЕ ОКНА И ПЕРЕХОД
         res.send(`
             <html>
-            <body style="background: #05050a; color: white; display: flex; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif;">
+            <body style="background: #05050a; color: white; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh;">
                 <div style="text-align: center;">
-                    <p style="font-size: 18px;">Авторизация успешна...</p>
-                    <div style="border: 3px solid rgba(255,255,255,0.1); border-top: 3px solid #5865F2; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 20px auto;"></div>
+                    <p>Успешно! Перенаправляем...</p>
                 </div>
-                <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
                 <script>
-                    if (window.opener) {
-                        // 1. Сохраняем ID пользователя в localStorage основного окна
-                        window.opener.localStorage.setItem('logged_user_id', '${user.id}');
-                        
-                        // 2. Перенаправляем основное окно на страницу личного кабинета
-                        // ВАЖНО: Укажи здесь путь к файлу твоего профиля/дашборда
-                        window.opener.location.href = '/dashboard.html'; 
-                        
-                        // 3. Закрываем текущее маленькое окно
-                        window.close();
+                    const userId = "${user.id}";
+                    
+                    // Попытка передать данные основному окну
+                    if (window.opener && !window.opener.closed) {
+                        try {
+                            window.opener.localStorage.setItem('logged_user_id', userId);
+                            window.opener.location.href = '/dashboard.html';
+                            window.close();
+                        } catch (e) {
+                            // Если из-за кросс-доменности не дает записать
+                            window.location.href = '/dashboard.html';
+                        }
                     } else {
-                        // Если вдруг окно открыто не как popup, просто редиректим тут
+                        // Если основное окно закрыто, просто открываем кабинет тут
                         window.location.href = '/dashboard.html';
                     }
                 </script>
