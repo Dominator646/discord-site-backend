@@ -5,23 +5,20 @@ const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
 
-// Раздача статики из папки public
+// Раздача файлов из папки public
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Инициализация Supabase (проверь переменные в Railway!)
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
 app.get('/', async (req, res) => {
     const { code } = req.query;
 
-    // Если кода нет, просто отдаем главную страницу
     if (!code) {
         return res.sendFile(path.join(__dirname, 'public', 'index.html'));
     }
 
     try {
-        console.log('---> Код получен, обмениваем на токен...');
-        
+        // 1. Получаем токен от Discord
         const tokenResponse = await axios.post(
             'https://discord.com/api/oauth2/token',
             new URLSearchParams({
@@ -37,7 +34,7 @@ app.get('/', async (req, res) => {
 
         const accessToken = tokenResponse.data.access_token;
 
-        // Получаем профиль из Discord
+        // 2. Получаем данные пользователя
         const userResponse = await axios.get('https://discord.com/api/users/@me', {
             headers: { Authorization: `Bearer ${accessToken}` }
         });
@@ -45,36 +42,39 @@ app.get('/', async (req, res) => {
         const user = userResponse.data;
         const avatarUrl = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`;
 
-        console.log(`---> Юзер ${user.username} получен. Запись в базу...`);
+        console.log(`Пользователь ${user.username} получен. Записываю в Supabase...`);
 
-        // Пишем в Supabase
+        // 3. Запись в базу (обязательно ждем выполнения)
         const { error: dbError } = await supabase
             .from('users_data')
             .upsert({ 
-                id: user.id, 
+                id: String(user.id), // Принудительно в строку
                 username: user.username, 
                 avatar: avatarUrl,
                 last_login: new Date().toISOString()
             });
 
-        if (dbError) console.error('Ошибка Supabase (пропускаем):', dbError.message);
+        if (dbError) {
+            console.error('ОШИБКА SUPABASE:', dbError.message);
+            // Даже если база ошиблась, мы должны закрыть окно, чтобы юзер не ждал вечно
+        }
 
-        // ОТВЕТ: Скрипт закрытия окна и редиректа основной страницы
+        // 4. ГЕНЕРИРУЕМ HTML, КОТОРЫЙ МГНОВЕННО ЗАКРЫВАЕТ ОКНО
         res.send(`
-            <!DOCTYPE html>
             <html>
-            <body style="background: #05050a; color: white; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; font-family: sans-serif;">
+            <head><title>Загрузка...</title></head>
+            <body style="background: #05050a;">
                 <script>
-                    if (window.opener && !window.opener.closed) {
-                        // Передаем данные в главное окно
+                    if (window.opener) {
+                        // Сохраняем данные в память ГЛАВНОГО окна
                         window.opener.localStorage.setItem('logged_user_id', '${user.id}');
                         window.opener.localStorage.setItem('user_name', '${user.username}');
                         window.opener.localStorage.setItem('user_avatar', '${avatarUrl}');
                         
-                        // Перенаправляем главное окно на dashboard
+                        // Командуем ГЛАВНОМУ окну сменить адрес
                         window.opener.location.href = '/dashboard.html';
                         
-                        // Закрываем поп-ап
+                        // ЗАКРЫВАЕМ ТЕКУЩЕЕ МАЛЕНЬКОЕ ОКНО
                         window.close();
                     } else {
                         window.location.href = '/dashboard.html';
@@ -85,8 +85,8 @@ app.get('/', async (req, res) => {
         `);
 
     } catch (error) {
-        console.error('Ошибка авторизации:', error.message);
-        res.status(500).send("Ошибка. Проверьте логи сервера.");
+        console.error('Ошибка в процессе:', error.message);
+        res.status(500).send("Ошибка авторизации. Проверьте логи.");
     }
 });
 
