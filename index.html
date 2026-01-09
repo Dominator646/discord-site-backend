@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeСкам | Movie Night</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="login-screen" class="container">
+        <div class="glass-card">
+            <h1 class="title">NeСкам</h1>
+            <p class="subtitle">Суббота. Друзья. Случайный фильм.</p>
+            <button id="login-btn" class="discord-btn">
+                <img src="https://cdn-icons-png.flaticon.com/512/2111/2111370.png" alt="Discord">
+                Войти через Discord
+            </button>
+        </div>
+    </div>
+
+    <div id="main-screen" class="container hidden">
+        <div class="profile-card">
+            <img id="avatar" src="" alt="Avatar" class="avatar">
+            <h2 id="nickname">Загрузка...</h2>
+            <div class="stats">
+                <span>💰 Монетки: <strong id="coins">0</strong></span>
+            </div>
+            <button id="logout-btn" class="secondary-btn">Выйти</button>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
