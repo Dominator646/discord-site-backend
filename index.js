@@ -6,19 +6,18 @@ const { createClient } = require('@supabase/supabase-js');
 const app = express();
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Инициализация Supabase
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
 app.get('/', async (req, res) => {
     const { code } = req.query;
 
-    // Если кода нет — просто отдаем страницу входа
+    // Если кода нет, отдаем посадочную страницу
     if (!code) {
         return res.sendFile(path.join(__dirname, 'public', 'index.html'));
     }
 
     try {
-        // 1. Обмен кода на токен Discord
+        // 1. Получаем данные от Discord
         const tokenResponse = await axios.post('https://discord.com/api/oauth2/token', 
             new URLSearchParams({
                 client_id: process.env.DISCORD_CLIENT_ID,
@@ -31,7 +30,6 @@ app.get('/', async (req, res) => {
             { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
         );
 
-        // 2. Получение данных пользователя
         const userResponse = await axios.get('https://discord.com/api/users/@me', {
             headers: { Authorization: `Bearer ${tokenResponse.data.access_token}` }
         });
@@ -39,45 +37,36 @@ app.get('/', async (req, res) => {
         const user = userResponse.data;
         const avatarUrl = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`;
 
-        // 3. ЗАПИСЬ В БАЗУ (Если тут ошибка, скрипт пойдет дальше благодаря try-catch)
-        try {
-            const { error } = await supabase.from('users_data').upsert({ 
-                id: String(user.id), 
-                username: user.username, 
-                avatar: avatarUrl,
-                last_login: new Date().toISOString()
-            });
-            if (error) console.error("Supabase Error:", error.message);
-        } catch (dbErr) {
-            console.error("DB Connection Error:", dbErr.message);
-        }
+        // 2. Пишем в Supabase (без await, чтобы не ждать ответа и закрыть окно БЫСТРЕЕ)
+        supabase.from('users_data').upsert({ 
+            id: String(user.id), 
+            username: user.username, 
+            avatar: avatarUrl,
+            last_login: new Date().toISOString()
+        }).then(({error}) => { if(error) console.log("DB Error:", error.message) });
 
-        // 4. ФИНАЛЬНЫЙ ОТВЕТ (Маленькое окно получит это и закроется)
+        // 3. ФИНАЛЬНЫЙ СКРИПТ (САМЫЙ ВАЖНЫЙ)
+        // Мы передаем данные через куки и localStorage и ПРИНУДИТЕЛЬНО закрываем окно
         res.send(`
             <html>
-            <head><meta charset="UTF-8"></head>
-            <body style="background: #05050a; color: white; display: flex; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif;">
+            <body style="background: #05050a;">
                 <script>
-                    // Записываем данные в память
+                    // Передаем сигнал родителю (большому окну)
+                    if (window.opener) {
+                        window.opener.localStorage.setItem('logged_user_id', '${user.id}');
+                        window.opener.postMessage("auth_success", "*");
+                        window.close(); // ЗАКРЫВАЕМ
+                    }
+                    // Резервный вариант, если opener потерян
                     localStorage.setItem('logged_user_id', '${user.id}');
-                    localStorage.setItem('user_name', '${user.username}');
-                    localStorage.setItem('user_avatar', '${avatarUrl}');
-                    
-                    // Пытаемся закрыть окно
-                    console.log("Авторизация завершена. Закрываю окно...");
-                    window.close();
-                    
-                    // Если вдруг window.close() заблокирован, делаем редирект внутри
-                    setTimeout(() => {
-                        window.location.href = '/dashboard.html';
-                    }, 500);
+                    setTimeout(() => { window.close(); }, 100);
                 </script>
             </body>
             </html>
         `);
 
     } catch (err) {
-        console.error("Auth Error:", err.message);
+        console.error("Auth error:", err.message);
         res.send("<script>window.close();</script>");
     }
 });
