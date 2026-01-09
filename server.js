@@ -39,7 +39,7 @@ app.get('/', async (req, res) => {
 
         // 4. Редирект на САМ САЙТ (Второй репозиторий)
         // Передаем ID через параметры, чтобы фронтенд его подхватил
-        res.redirect(`https://твой-основной-сайт.vercel.app/?user_id=${discordUser.id}`);
+        res.redirect(`https://dominator646.vercel.app/?user_id=${discordUser.id}`);
 
     } catch (err) {
         console.error(err);
