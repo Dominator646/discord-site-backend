@@ -66,34 +66,30 @@ app.get('/', async (req, res) => {
 
         console.log('Данные успешно сохранены в Supabase');
 
-        // 4. ЗАКРЫТИЕ ОКНА И ПЕРЕХОД
-        res.send(`
-            <html>
-            <body style="background: #05050a; color: white; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh;">
-                <div style="text-align: center;">
-                    <p>Успешно! Перенаправляем...</p>
-                </div>
-                <script>
-                    const userId = "${user.id}";
-                    
-                    // Попытка передать данные основному окну
-                    if (window.opener && !window.opener.closed) {
-                        try {
-                            window.opener.localStorage.setItem('logged_user_id', userId);
-                            window.opener.location.href = '/dashboard.html';
-                            window.close();
-                        } catch (e) {
-                            // Если из-за кросс-доменности не дает записать
-                            window.location.href = '/dashboard.html';
-                        }
-                    } else {
-                        // Если основное окно закрыто, просто открываем кабинет тут
-                        window.location.href = '/dashboard.html';
-                    }
-                </script>
-            </body>
-            </html>
-        `);
+// Отправляем скрипт, который закроет поп-ап и перенаправит ГЛАВНОЕ окно
+res.send(`
+    <html>
+    <head><title>Авторизация...</title></head>
+    <body style="background: #05050a; color: white; display: flex; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif;">
+        <div style="text-align: center;">
+            <p>Успешно! Возвращаемся на сайт...</p>
+        </div>
+        <script>
+            if (window.opener) {
+                // 1. Сохраняем ID в память основного окна
+                window.opener.localStorage.setItem('logged_user_id', '${user.id}');
+                // 2. Даем команду основному окну перейти в кабинет
+                window.opener.location.href = '/dashboard.html';
+                // 3. Закрываем текущее маленькое окно
+                window.close();
+            } else {
+                // Если окно открыто не как поп-ап, просто редиректим
+                window.location.href = '/dashboard.html';
+            }
+        </script>
+    </body>
+    </html>
+`);
 
     } catch (error) {
         console.error('Критическая ошибка:', error.response ? error.response.data : error.message);
