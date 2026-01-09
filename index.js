@@ -70,7 +70,7 @@ app.get('/', async (req, res) => {
 
         // УСПЕХ: Перебрасываем на красивую страницу (Frontend)
         // Замени ссылку ниже на свой GitHub Pages или где у тебя лежит index.html
-        res.redirect(`https://ТВОЙ_НИК.github.io/discord-site-frontend/?user_id=${user.id}`);
+        res.redirect(`https://dominator646.github.io/discord-site-frontend/?user_id=${user.id}`);
 
     } catch (error) {
         console.error('Критическая ошибка:', error.response ? error.response.data : error.message);
