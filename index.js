@@ -59,28 +59,26 @@ app.get('/', async (req, res) => {
             // Даже если база ошиблась, мы должны закрыть окно, чтобы юзер не ждал вечно
         }
 
-        // 4. ГЕНЕРИРУЕМ HTML, КОТОРЫЙ МГНОВЕННО ЗАКРЫВАЕТ ОКНО
+        // 4. МГНОВЕННОЕ ЗАКРЫТИЕ И СИГНАЛ
         res.send(`
             <html>
-            <head><title>Загрузка...</title></head>
-            <body style="background: #05050a;">
-                <script>
-                    if (window.opener) {
-                        // Сохраняем данные в память ГЛАВНОГО окна
-                        window.opener.localStorage.setItem('logged_user_id', '${user.id}');
-                        window.opener.localStorage.setItem('user_name', '${user.username}');
-                        window.opener.localStorage.setItem('user_avatar', '${avatarUrl}');
-                        
-                        // Командуем ГЛАВНОМУ окну сменить адрес
-                        window.opener.location.href = '/dashboard.html';
-                        
-                        // ЗАКРЫВАЕМ ТЕКУЩЕЕ МАЛЕНЬКОЕ ОКНО
-                        window.close();
-                    } else {
-                        window.location.href = '/dashboard.html';
-                    }
-                </script>
-            </body>
+            <script>
+                if (window.opener) {
+                    // Отправляем данные родителю через postMessage (самый надежный способ)
+                    window.opener.postMessage({
+                        type: 'AUTH_COMPLETE',
+                        userId: '${user.id}',
+                        username: '${user.username}',
+                        avatar: '${avatarUrl}'
+                    }, "*");
+                    
+                    // Мгновенно закрываем это маленькое окно
+                    window.close();
+                } else {
+                    window.location.href = '/dashboard.html';
+                }
+            </script>
+            <body style="background: #05050a;"></body>
             </html>
         `);
 
