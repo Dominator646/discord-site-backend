@@ -80,15 +80,15 @@ app.get('/', async (req, res) => {
                     if (window.opener && !window.opener.closed) {
                         try {
                             window.opener.localStorage.setItem('logged_user_id', userId);
-                            window.opener.location.href = 'dashboard.html';
+                            window.opener.location.href = '/dashboard.html';
                             window.close();
                         } catch (e) {
                             // Если из-за кросс-доменности не дает записать
-                            window.location.href = 'dashboard.html';
+                            window.location.href = '/dashboard.html';
                         }
                     } else {
                         // Если основное окно закрыто, просто открываем кабинет тут
-                        window.location.href = 'dashboard.html';
+                        window.location.href = '/dashboard.html';
                     }
                 </script>
             </body>
