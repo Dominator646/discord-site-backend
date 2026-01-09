@@ -1,73 +1,41 @@
-const express = require('express');
-const axios = require('axios');
-const path = require('path');
-const { createClient } = require('@supabase/supabase-js');
+const SUPABASE_URL = 'ТВОЙ_URL_ИЗ_SUPABASE';
+const SUPABASE_ANON_KEY = 'ТВОЙ_КЛЮЧ_ИЗ_SUPABASE';
 
-const app = express();
-app.use(express.static(path.join(__dirname, 'public')));
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
+const loginBtn = document.getElementById('login-btn');
+const loginScreen = document.getElementById('login-screen');
+const mainScreen = document.getElementById('main-screen');
 
-// 1. ГЛАВНАЯ СТРАНИЦА (Твой профиль, монетки, аватарка)
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
+// 1. Функция входа
+loginBtn.addEventListener('click', async () => {
+    await supabase.auth.signInWithOAuth({
+        provider: 'discord',
+    });
 });
 
-// 2. СТРАНИЦА ВХОДА (Кнопка "Войти через Дискорд")
-app.get('/login', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'login.html'));
-});
+// 2. Проверка сессии при загрузке
+async function checkUser() {
+    const { data: { user } } = await supabase.auth.getUser();
 
-// 3. ОБРАБОТКА ВХОДА (То самое маленькое окошко)
-app.get('/auth/callback', async (req, res) => {
-    const { code } = req.query;
-    if (!code) return res.redirect('/login');
-
-    try {
-        const tokenResponse = await axios.post('https://discord.com/api/oauth2/token', 
-            new URLSearchParams({
-                client_id: process.env.DISCORD_CLIENT_ID,
-                client_secret: process.env.DISCORD_CLIENT_SECRET,
-                code: code,
-                grant_type: 'authorization_code',
-                redirect_uri: 'https://discord-site-backend-production.up.railway.app/auth/callback',
-                scope: 'identify',
-            }).toString(), 
-            { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
-        );
-
-        const userResponse = await axios.get('https://discord.com/api/users/@me', {
-            headers: { Authorization: `Bearer ${tokenResponse.data.access_token}` }
-        });
-
-        const user = userResponse.data;
-        const avatarUrl = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`;
-
-        // Запись в базу
-        await supabase.from('users_data').upsert({ 
-            id: String(user.id), 
-            username: user.username, 
-            avatar: avatarUrl,
-            last_login: new Date().toISOString()
-        });
-
-        // СКРИПТ ЗАКРЫТИЯ МАЛЕНЬКОГО ОКНА
-        res.send(`
-            <script>
-                localStorage.setItem('logged_user_id', '${user.id}');
-                localStorage.setItem('user_name', '${user.username}');
-                localStorage.setItem('user_avatar', '${avatarUrl}');
-                if (window.opener) {
-                    window.opener.postMessage("login_success", "*");
-                }
-                window.close();
-            </script>
-        `);
-    } catch (err) {
-        console.error(err);
-        res.send("<script>window.close();</script>");
+    if (user) {
+        showMainScreen(user);
     }
+}
+
+function showMainScreen(user) {
+    loginScreen.classList.add('hidden');
+    mainScreen.classList.remove('hidden');
+    
+    document.getElementById('nickname').innerText = user.user_metadata.full_name;
+    document.getElementById('avatar').src = user.user_metadata.avatar_url;
+    // Здесь можно сделать запрос к таблице 'profiles' за монетками
+}
+
+// 3. Выход
+document.getElementById('logout-btn').addEventListener('click', async () => {
+    await supabase.auth.signOut();
+    window.location.reload();
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, '0.0.0.0');
+checkUser();
