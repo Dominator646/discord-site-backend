@@ -1,71 +1,25 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <title>NeСкам | Профиль</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        body { background: #050505; color: white; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .profile-card {
-            background: rgba(255, 255, 255, 0.05);
-            padding: 40px;
-            border-radius: 20px;
-            text-align: center;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        #avatar { width: 100px; height: 100px; border-radius: 50%; border: 3px solid #5865F2; margin-bottom: 15px; }
-        .coins { color: #ffd700; font-weight: bold; font-size: 1.2rem; margin-top: 10px; }
-        .logout { margin-top: 20px; cursor: pointer; color: #ff4d4d; background: none; border: none; }
-    </style>
+  <meta charset="UTF-8">
+  <title>NeСкам — Профиль</title>
 </head>
 <body>
 
-    <div class="profile-card" id="loader">Загрузка кинопленки...</div>
+<h1 id="name"></h1>
+<img id="avatar" width="120">
+<p>Монеты: <span id="coins"></span></p>
 
-    <div class="profile-card" id="content" style="display: none;">
-        <img id="avatar" src="" alt="Avatar">
-        <h2 id="username"></h2>
-        <div class="coins">💰 Монетки: <span id="coin-count">0</span></div>
-        <button class="logout" onclick="logout()">Выйти</button>
-    </div>
+<script>
+fetch("/api/me")
+  .then(r => r.json())
+  .then(u => {
+    if (!u.id) location.href = "/";
+    name.innerText = u.username;
+    avatar.src = u.avatar;
+    coins.innerText = u.coins;
+  });
+</script>
 
-    <script>
-        const supabaseUrl = 'https://your-project.supabase.co'
-        const supabaseKey = 'your-anon-key'
-        const supabase = supabase.createClient(supabaseUrl, supabaseKey)
-
-        async function loadProfile() {
-            // 1. Проверяем, залогинен ли юзер
-            const { data: { user } } = await supabase.auth.getUser()
-
-            if (!user) {
-                window.location.href = 'index.html'; // На выход, если не в сети
-                return;
-            }
-
-            // 2. Берем данные из нашей таблицы profiles
-            const { data: profile, error } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', user.id)
-                .single()
-
-            if (profile) {
-                document.getElementById('username').innerText = profile.username;
-                document.getElementById('avatar').src = profile.avatar_url;
-                document.getElementById('coin-count').innerText = profile.coins;
-                
-                document.getElementById('loader').style.display = 'none';
-                document.getElementById('content').style.display = 'block';
-            }
-        }
-
-        async function logout() {
-            await supabase.auth.signOut();
-            window.location.href = 'index.html';
-        }
-
-        loadProfile();
-    </script>
 </body>
 </html>
