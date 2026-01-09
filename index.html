@@ -1,24 +1,207 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <title>NeСкам — Movie Night</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeСкам</title>
+    <style>
+        /* Global styles */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif; /* Modern sans-serif */
+            background: linear-gradient(135deg, #1a0033, #000033, #000000); /* Deep purple, dark blue, black gradient */
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #ffffff;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Vignette effect */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, transparent 50%, rgba(0, 0, 0, 0.7) 100%);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* Film grain effect */
+        body::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"%3E%3Cfilter id="noise"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.5" numOctaves="3" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100" height="100" filter="url(%23noise)" opacity="0.1"/%3E%3C/svg%3E');
+            pointer-events: none;
+            z-index: 2;
+            animation: grain 8s steps(10) infinite;
+        }
+
+        @keyframes grain {
+            0% { transform: translate(0, 0); }
+            10% { transform: translate(-5%, -5%); }
+            20% { transform: translate(-15%, 5%); }
+            30% { transform: translate(7%, -25%); }
+            40% { transform: translate(-5%, 25%); }
+            50% { transform: translate(-15%, 10%); }
+            60% { transform: translate(15%, 0%); }
+            70% { transform: translate(0%, 15%); }
+            80% { transform: translate(3%, 35%); }
+            90% { transform: translate(-10%, 10%); }
+            100% { transform: translate(0, 0); }
+        }
+
+        /* Centered card */
+        .login-card {
+            position: relative;
+            z-index: 3;
+            background: rgba(0, 0, 0, 0.6); /* Semi-transparent dark */
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            max-width: 400px;
+            box-shadow: 0 0 20px rgba(138, 43, 226, 0.3), 0 0 40px rgba(0, 255, 255, 0.2); /* Violet and cyan glow */
+        }
+
+        /* Title */
+        h1 {
+            font-size: 48px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px rgba(138, 43, 226, 0.5); /* Violet neon glow */
+        }
+
+        /* Subtitle */
+        p {
+            font-size: 18px;
+            letter-spacing: 1px;
+            margin-bottom: 30px;
+            color: #d3d3d3;
+        }
+
+        /* Discord button */
+        .discord-button {
+            background-color: #5865F2; /* Discord brand color */
+            color: #ffffff;
+            font-size: 18px;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 15px rgba(88, 101, 242, 0.5); /* Neon glow */
+        }
+
+        .discord-button:hover {
+            background-color: #4752C4;
+            box-shadow: 0 0 25px rgba(0, 255, 255, 0.7); /* Cyan accent on hover */
+        }
+
+        /* Discord icon (SVG) */
+        .discord-icon {
+            width: 24px;
+            height: 24px;
+        }
+
+        /* Subtle wheel of fortune hints - abstract blurred segments */
+        .wheel-hint {
+            position: absolute;
+            width: 100vw;
+            height: 100vh;
+            top: 0;
+            left: 0;
+            overflow: hidden;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .wheel-segment {
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            filter: blur(50px);
+            opacity: 0.1;
+            animation: rotate 20s linear infinite;
+        }
+
+        .segment1 {
+            background: rgba(138, 43, 226, 0.5); /* Violet */
+            top: 10%;
+            left: 20%;
+        }
+
+        .segment2 {
+            background: rgba(0, 255, 255, 0.5); /* Cyan */
+            top: 60%;
+            right: 15%;
+            animation-duration: 25s;
+            animation-direction: reverse;
+        }
+
+        .segment3 {
+            background: rgba(0, 191, 255, 0.5); /* Electric blue */
+            bottom: 20%;
+            left: 50%;
+            animation-duration: 30s;
+        }
+
+        @keyframes rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
 </head>
 <body>
+    <!-- Wheel hints -->
+    <div class="wheel-hint">
+        <div class="wheel-segment segment1"></div>
+        <div class="wheel-segment segment2"></div>
+        <div class="wheel-segment segment3"></div>
+    </div>
 
-<div class="background"></div>
+    <!-- Login card -->
+    <div class="login-card">
+        <h1>NeСкам</h1>
+        <p>Суббота. Друзья. Случайный фильм.</p>
+        <button class="discord-button" onclick="loginWithDiscord()">
+            <svg class="discord-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M18.364 5.63604C16.989 4.92893 15.661 4.52893 14.364 4.29289C14.328 4.28604 14.292 4.30404 14.274 4.34004C14.038 4.80404 13.774 5.40404 13.61 5.90004C12.43 5.71804 11.27 5.71804 10.09 5.90004C9.926 5.40404 9.662 4.80404 9.426 4.34004C9.408 4.30404 9.372 4.28604 9.336 4.29289C8.039 4.52893 6.711 4.92893 5.336 5.63604C5.318 5.64404 5.302 5.65804 5.292 5.67604C2.958 9.45204 2.314 13.128 2.636 16.764C2.638 16.798 2.656 16.828 2.688 16.844C4.072 17.812 5.406 18.4 6.7 18.764C6.736 18.774 6.77 18.758 6.784 18.726C7.15 18.158 7.474 17.562 7.75 16.936C7.766 16.9 7.748 16.862 7.714 16.852C6.502 16.502 5.368 16.066 4.284 15.528C4.248 15.51 4.242 15.468 4.264 15.442C4.446 15.23 4.628 15.006 4.802 14.784C4.82 14.76 4.844 14.75 4.87 14.756C8.388 16.024 11.612 16.024 15.13 14.756C15.156 14.75 15.18 14.76 15.198 14.784C15.372 15.006 15.554 15.23 15.736 15.442C15.758 15.468 15.752 15.51 15.716 15.528C14.632 16.066 13.498 16.502 12.286 16.852C12.252 16.862 12.234 16.9 12.25 16.936C12.526 17.562 12.85 18.158 13.216 18.726C13.23 18.758 13.264 18.774 13.3 18.764C14.594 18.4 15.928 17.812 17.312 16.844C17.344 16.828 17.362 16.798 17.364 16.764C17.686 13.128 17.042 9.45204 14.708 5.67604C14.698 5.65804 14.682 5.64404 14.664 5.63604H14.636 18.364ZM9.5 13.5C8.672 13.5 8 12.828 8 12C8 11.172 8.672 10.5 9.5 10.5C10.328 10.5 11 11.172 11 12C11 12.828 10.328 13.5 9.5 13.5ZM14.5 13.5C13.672 13.5 13 12.828 13 12C13 11.172 13.672 10.5 14.5 10.5C15.328 10.5 16 11.172 16 12C16 12.828 15.328 13.5 14.5 13.5Z" fill="currentColor"/>
+            </svg>
+            Войти через Discord
+        </button>
+    </div>
 
-<div class="login-card">
-  <h1>NeСкам</h1>
-  <p class="subtitle">Суббота. Друзья. Случайный фильм.</p>
-
-  <button id="discordLogin" class="discord-btn">
-    <img src="https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/discord.svg">
-    Войти через Discord
-  </button>
-</div>
-
-<script src="auth.js"></script>
+    <script>
+        function loginWithDiscord() {
+            // Replace with your actual Discord OAuth URL
+            // Example: https://discord.com/api/oauth2/authorize?client_id=YOUR_CLIENT_ID&redirect_uri=YOUR_REDIRECT_URI&response_type=code&scope=identify%20email
+            const authUrl = 'https://discord.com/api/oauth2/authorize?client_id=0AUS&redirect_uri=https://your-railway-server.com/discord-callback&response_type=code&scope=identify%20email'; // Placeholder - update with real values
+            const popup = window.open(authUrl, 'discordAuth', 'width=500,height=600,left=200,top=100');
+            
+            // Listen for message from popup (after auth, popup should postMessage and close)
+            window.addEventListener('message', (event) => {
+                if (event.data === 'auth_success') {
+                    // Redirect to main page after successful auth
+                    window.location.href = '/main.html'; // Or wherever your main page is
+                }
+            });
+        }
+    </script>
 </body>
 </html>
