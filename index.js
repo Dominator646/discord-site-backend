@@ -1,28 +1,29 @@
 const express = require('express');
 const axios = require('axios');
+const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
 
-// 1. Сначала создаем приложение
 const app = express();
 
-// 2. Потом подключаем папку public (чтобы сайт открывался)
-app.use(express.static('public'));
+// 1. Настройка статики (чтобы открывались index.html и dashboard.html из папки public)
+app.use(express.static(path.join(__dirname, 'public')));
 
-// 3. Потом инициализируем базу данных
+// 2. Инициализация Supabase
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
+// 3. Основной маршрут для авторизации через Discord
 app.get('/', async (req, res) => {
     const { code } = req.query;
 
-    // Если кода нет (просто зашли на URL бэкенда)
+    // Если кода нет (пользователь просто зашел на сайт), отдаем index.html
     if (!code) {
-        return res.status(400).send("Ошибка: Код авторизации отсутствует.");
+        return res.sendFile(path.join(__dirname, 'public', 'index.html'));
     }
 
     try {
-        console.log('--- Начинаем процесс авторизации ---');
+        console.log('--- Авторизация: обмен кода на токен ---');
 
-        // 1. Обмениваем временный код на Access Token
+        // Обмениваем код на токен доступа
         const tokenResponse = await axios.post(
             'https://discord.com/api/oauth2/token',
             new URLSearchParams({
@@ -38,7 +39,7 @@ app.get('/', async (req, res) => {
 
         const accessToken = tokenResponse.data.access_token;
 
-        // 2. Запрашиваем данные пользователя у Discord
+        // Получаем данные пользователя из Discord
         const userResponse = await axios.get('https://discord.com/api/users/@me', {
             headers: { Authorization: `Bearer ${accessToken}` }
         });
@@ -46,10 +47,7 @@ app.get('/', async (req, res) => {
         const user = userResponse.data;
         const avatarUrl = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`;
 
-        console.log(`Пользователь получен: ${user.username}`);
-
-        // 3. ОТПРАВКА ДАННЫХ В SUPABASE
-        // Используем upsert: если пользователя нет - создаст, если есть - обновит ник и аватар
+        // 4. Запись в Supabase (Таблица users_data)
         const { error: supabaseError } = await supabase
             .from('users_data')
             .upsert({ 
@@ -57,57 +55,43 @@ app.get('/', async (req, res) => {
                 username: user.username, 
                 avatar: avatarUrl,
                 last_login: new Date()
-            }, { onConflict: 'id' });
+            });
 
-        if (supabaseError) {
-            console.error('Ошибка Supabase:', supabaseError);
-            throw new Error('Ошибка при сохранении в базу данных');
-        }
+        if (supabaseError) throw supabaseError;
 
-        console.log('Данные успешно сохранены в Supabase');
-
-// ... (после успешной записи в Supabase)
-
-console.log('Данные успешно сохранены в Supabase');
-
-// Отправляем скрипт, который закроет поп-ап и перенаправит ГЛАВНОЕ окно
-res.send(`
-    <html>
-    <head><title>Авторизация...</title></head>
-    <body style="background: #05050a; color: white; display: flex; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif;">
-        <div style="text-align: center;">
-            <p>Успешно! Возвращаемся на сайт...</p>
-        </div>
-        <script>
-            if (window.opener) {
-                // 1. Сохраняем ID в память основного окна
-                window.opener.localStorage.setItem('logged_user_id', '${user.id}');
-                // 2. Даем команду основному окну перейти в кабинет
-                window.opener.location.href = '/dashboard.html';
-                // 3. Закрываем текущее маленькое окно
-                window.close();
-            } else {
-                // Если окно открыто не как поп-ап, просто редиректим
-                window.location.href = '/dashboard.html';
-            }
-        </script>
-    </body>
-    </html>
-`);
+        // 5. Финальный скрипт для маленького окна
+        // Он сохраняет данные в "родительское" окно, перекидывает его на dashboard и закрывается
+        res.send(`
+            <html>
+            <body style="background: #05050a; color: white; display: flex; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif;">
+                <script>
+                    if (window.opener) {
+                        // Сохраняем данные в localStorage основного окна
+                        window.opener.localStorage.setItem('logged_user_id', '${user.id}');
+                        window.opener.localStorage.setItem('user_name', '${user.username}');
+                        window.opener.localStorage.setItem('user_avatar', '${avatarUrl}');
+                        
+                        // Перенаправляем основное окно на Dashboard
+                        window.opener.location.href = '/dashboard.html';
+                        
+                        // Закрываем текущее маленькое окно авторизации
+                        window.close();
+                    } else {
+                        // Если зашли напрямую (не через поп-ап)
+                        window.location.href = '/dashboard.html';
+                    }
+                </script>
+            </body>
+            </html>
+        `);
 
     } catch (error) {
-        console.error('Критическая ошибка:', error.response ? error.response.data : error.message);
-        res.status(500).send(`
-            <div style="background: #0f172a; color: #ff4d4d; padding: 20px; font-family: sans-serif;">
-                <h3>Ошибка авторизации</h3>
-                <p>${error.message}</p>
-                <button onclick="window.close()">Закрыть это окно</button>
-            </div>
-        `);
+        console.error('Ошибка:', error.message);
+        res.status(500).send("Ошибка авторизации. Попробуйте снова.");
     }
 });
 
-// Запуск сервера
+// Запуск сервера на порту Railway
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Сервер NeСкам запущен на порту ${PORT}`);
