@@ -6,14 +6,19 @@ const { createClient } = require('@supabase/supabase-js');
 const app = express();
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Инициализация Supabase
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
 app.get('/', async (req, res) => {
     const { code } = req.query;
-    if (!code) return res.sendFile(path.join(__dirname, 'public', 'index.html'));
+
+    // Если кода нет — просто отдаем страницу входа
+    if (!code) {
+        return res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    }
 
     try {
-        // 1. Токен
+        // 1. Обмен кода на токен Discord
         const tokenResponse = await axios.post('https://discord.com/api/oauth2/token', 
             new URLSearchParams({
                 client_id: process.env.DISCORD_CLIENT_ID,
@@ -26,7 +31,7 @@ app.get('/', async (req, res) => {
             { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
         );
 
-        // 2. Юзер
+        // 2. Получение данных пользователя
         const userResponse = await axios.get('https://discord.com/api/users/@me', {
             headers: { Authorization: `Bearer ${tokenResponse.data.access_token}` }
         });
@@ -34,28 +39,48 @@ app.get('/', async (req, res) => {
         const user = userResponse.data;
         const avatarUrl = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`;
 
-        // 3. Запись в Supabase (Важно: String для ID)
-        const { error } = await supabase.from('users_data').upsert({ 
-            id: String(user.id), 
-            username: user.username, 
-            avatar: avatarUrl,
-            last_login: new Date().toISOString()
-        });
+        // 3. ЗАПИСЬ В БАЗУ (Если тут ошибка, скрипт пойдет дальше благодаря try-catch)
+        try {
+            const { error } = await supabase.from('users_data').upsert({ 
+                id: String(user.id), 
+                username: user.username, 
+                avatar: avatarUrl,
+                last_login: new Date().toISOString()
+            });
+            if (error) console.error("Supabase Error:", error.message);
+        } catch (dbErr) {
+            console.error("DB Connection Error:", dbErr.message);
+        }
 
-        if (error) console.error("Supabase Error:", error.message);
-
-        // 4. ФИНАЛ: Передаем данные через куки или localStorage и ЗАКРЫВАЕМ
+        // 4. ФИНАЛЬНЫЙ ОТВЕТ (Маленькое окно получит это и закроется)
         res.send(`
-            <script>
-                localStorage.setItem('logged_user_id', '${user.id}');
-                localStorage.setItem('user_name', '${user.username}');
-                localStorage.setItem('user_avatar', '${avatarUrl}');
-                window.close(); // Окно просто закрывается
-            </script>
+            <html>
+            <head><meta charset="UTF-8"></head>
+            <body style="background: #05050a; color: white; display: flex; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif;">
+                <script>
+                    // Записываем данные в память
+                    localStorage.setItem('logged_user_id', '${user.id}');
+                    localStorage.setItem('user_name', '${user.username}');
+                    localStorage.setItem('user_avatar', '${avatarUrl}');
+                    
+                    // Пытаемся закрыть окно
+                    console.log("Авторизация завершена. Закрываю окно...");
+                    window.close();
+                    
+                    // Если вдруг window.close() заблокирован, делаем редирект внутри
+                    setTimeout(() => {
+                        window.location.href = '/dashboard.html';
+                    }, 500);
+                </script>
+            </body>
+            </html>
         `);
+
     } catch (err) {
+        console.error("Auth Error:", err.message);
         res.send("<script>window.close();</script>");
     }
 });
 
-app.listen(process.env.PORT || 3000);
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, '0.0.0.0');
