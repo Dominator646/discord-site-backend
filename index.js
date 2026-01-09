@@ -1,19 +1,34 @@
-// 1. Импортируем библиотеку
-const { createClient } = require('@supabase/supabase-js');
+const CLIENT_ID = "1431712036626104401";
+const REDIRECT_URI = "https://YOUR-RAILWAY.app/auth/discord";
 
-// 2. Инициализируем клиент (Railway возьмет эти данные из настроек)
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_ANON_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
+document.getElementById("discordLogin").onclick = () => {
+  const url =
+    `https://discord.com/oauth2/authorize` +
+    `?client_id=${CLIENT_ID}` +
+    `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}` +
+    `&response_type=code` +
+    `&scope=identify email`;
 
-// 3. Твоя функция теперь будет видеть переменную supabase
-async function checkUser() {
-    const { data: { user }, error } = await supabase.auth.getUser();
-    if (error) {
-        console.error("Ошибка получения юзера:", error.message);
-        return;
+  const popup = window.open(
+    url,
+    "discordLogin",
+    "width=500,height=700"
+  );
+
+  const timer = setInterval(() => {
+    if (popup.closed) {
+      clearInterval(timer);
+      checkAuth();
     }
-    console.log("Юзер найден:", user);
-}
+  }, 500);
+};
 
-checkUser();
+function checkAuth() {
+  fetch("/api/me")
+    .then(res => res.json())
+    .then(user => {
+      if (user.id) {
+        window.location.href = "/dashboard.html";
+      }
+    });
+}
