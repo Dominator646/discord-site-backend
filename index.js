@@ -7,28 +7,13 @@ document.getElementById("discordLogin").onclick = () => {
     `?client_id=${CLIENT_ID}` +
     `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}` +
     `&response_type=code` +
-    `&scope=identify email`;
+    `&scope=identify`;
 
-  const popup = window.open(
-    url,
-    "discordLogin",
-    "width=500,height=700"
-  );
-
-  const timer = setInterval(() => {
-    if (popup.closed) {
-      clearInterval(timer);
-      checkAuth();
-    }
-  }, 500);
+  window.open(url, "discord", "width=500,height=700");
 };
 
-function checkAuth() {
-  fetch("/api/me")
-    .then(res => res.json())
-    .then(user => {
-      if (user.id) {
-        window.location.href = "/dashboard.html";
-      }
-    });
-}
+window.addEventListener("message", (event) => {
+  if (event.data === "discord-auth-success") {
+    window.location.href = "/dashboard.html";
+  }
+});
