@@ -191,7 +191,7 @@
         function loginWithDiscord() {
             // Replace with your actual Discord OAuth URL
             // Example: https://discord.com/api/oauth2/authorize?client_id=YOUR_CLIENT_ID&redirect_uri=YOUR_REDIRECT_URI&response_type=code&scope=identify%20email
-            const authUrl = 'https://discord.com/api/oauth2/authorize?client_id=0AUS&redirect_uri=https://your-railway-server.com/discord-callback&response_type=code&scope=identify%20email'; // Placeholder - update with real values
+            const authUrl = 'https://discord.com/api/oauth2/authorize?client_id=1431712036626104401&redirect_uri=https://discord-site-backend-production.up.railway.app/auth/discord/callback&response_type=code&scope=identify%20email'; // Placeholder - update with real values
             const popup = window.open(authUrl, 'discordAuth', 'width=500,height=600,left=200,top=100');
             
             // Listen for message from popup (after auth, popup should postMessage and close)
