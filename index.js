@@ -1,5 +1,5 @@
 const CLIENT_ID = "1431712036626104401";
-const REDIRECT_URI = "https://YOUR-RAILWAY.app/auth/discord";
+const REDIRECT_URI = "https://discord-site-backend-production.up.railway.app/";
 
 document.getElementById("discordLogin").onclick = () => {
   const url =
