@@ -1,20 +1,24 @@
 <script>
-    // Если пользователь зашел на сайт и он уже авторизован — сразу редирект
-    window.onload = () => {
-        if (localStorage.getItem('logged_user_id')) {
+    // 1. Слушаем сообщение от поп-апа
+    window.addEventListener('message', (event) => {
+        if (event.data.type === 'AUTH_COMPLETE') {
+            // Сохраняем данные
+            localStorage.setItem('logged_user_id', event.data.userId);
+            localStorage.setItem('user_name', event.data.username);
+            localStorage.setItem('user_avatar', event.data.avatar);
+            
+            // ПЕРЕНАПРАВЛЯЕМ ГЛАВНУЮ СТРАНИЦУ
             window.location.href = '/dashboard.html';
         }
-    };
+    });
 
     function openAuthPopup() {
-        const width = 500;
-        const height = 750;
+        const width = 500, height = 750;
         const left = (screen.width / 2) - (width / 2);
         const top = (screen.height / 2) - (height / 2);
 
         const authUrl = "https://discord.com/api/oauth2/authorize?client_id=1431712036626104401&redirect_uri=https://discord-site-backend-production.up.railway.app&response_type=code&scope=identify";
 
-        // Открываем маленькое окно
         window.open(authUrl, "DiscordAuth", `width=${width},height=${height},top=${top},left=${left}`);
     }
 </script>
