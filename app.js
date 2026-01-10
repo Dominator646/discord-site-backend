@@ -19,4 +19,15 @@ if (token) {
   document.getElementById("profile").classList.remove("hidden");
 
   // тут позже запрос в Supabase по JWT
+
+  window.addEventListener("message", (event) => {
+  if (!event.data.token) return;
+
+  localStorage.setItem("token", event.data.token);
+
+  document.getElementById("auth").classList.add("hidden");
+  document.getElementById("profile").classList.remove("hidden");
+
+  loadProfile();
+});
 }
