@@ -69,7 +69,15 @@ app.get("/auth/discord/callback", async (req, res) => {
 
   const jwtToken = jwt.sign({ discord_id: user.id }, JWT_SECRET);
 
-  res.redirect(`https://dominator646.github.io/?token=${jwtToken}`);
+res.send(`
+<script>
+  window.opener.postMessage(
+    { token: "${jwtToken}" },
+    "*"
+  );
+  window.close();
+</script>
+`);
 });
 
 app.listen(3000, () => console.log("Server started"));
