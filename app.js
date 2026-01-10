@@ -5,7 +5,7 @@ function login() {
   const top = (screen.height / 2) - (height / 2);
 
   window.open(
-    "https://discord-site-backend-production.up.railway.app/auth/discord/callback",
+    "https://discord.com/oauth2/authorize?client_id=1431712036626104401&response_type=code&redirect_uri=https%3A%2F%2Fdiscord-site-backend-production.up.railway.app%2Fauth%2Fdiscord%2Fcallback&scope=identify",
     "DiscordLogin",
     `width=${width},height=${height},top=${top},left=${left}`
   );
