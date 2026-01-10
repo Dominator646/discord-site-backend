@@ -3,22 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <title>NeСкам</title>
-  <link rel="stylesheet" href="style.css">
+  <style>
+    body { background: linear-gradient(to bottom, #000, #0a0a2a); color: #fff; font-family: 'Arial', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+    .container { text-align: center; padding: 40px; border-radius: 20px; background: rgba(255,255,255,0.05); box-shadow: 0 0 20px rgba(0, 255, 255, 0.2); animation: glow 2s infinite alternate; }
+    @keyframes glow { 0% { box-shadow: 0 0 20px rgba(0, 255, 255, 0.2); } 100% { box-shadow: 0 0 30px rgba(0, 255, 255, 0.4); } }
+    h1 { font-size: 3em; text-shadow: 0 0 10px #00ffff; }
+    p { font-size: 1.2em; margin: 20px 0; }
+    button { background: linear-gradient(to right, #00ffff, #ff00ff); border: none; padding: 15px 30px; font-size: 1.5em; border-radius: 50px; cursor: pointer; transition: transform 0.3s; }
+    button:hover { transform: scale(1.1); box-shadow: 0 0 15px #00ffff; }
+  </style>
 </head>
 <body>
-
-<div id="auth" class="card">
-  <h1>NeСкам 🎬</h1>
-  <p>Суббота. Ночь. Случайный фильм.</p>
-  <button onclick="login()">Войти через Discord</button>
-</div>
-
-<div id="profile" class="card hidden">
-  <img id="avatar">
-  <h2 id="username"></h2>
-  <p>💰 Монеты: <span id="coins">0</span></p>
-</div>
-
-<script src="app.js"></script>
+  <div class="container">
+    <h1>NeСкам</h1>
+    <p>Каждую субботу ночью выбираем случайные фильмы с друзьями. Ламповый вайб, премиум-атмосфера.</p>
+    <button onclick="window.location.href='/auth/discord'">Войти через Discord</button>
+  </div>
 </body>
 </html>
