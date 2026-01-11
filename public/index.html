@@ -10,7 +10,24 @@
   <div class="card">
     <h1>NeСкам</h1>
     <p>Вечернее камерное событие для своих</p>
-    <a class="btn" href="/auth/discord">Войти через Discord</a>
+<button class="btn" onclick="loginWithDiscord()">Войти через Discord</button>
+
+<script>
+function loginWithDiscord() {
+  const popup = window.open(
+    '/auth/discord',
+    'discordLogin',
+    'width=500,height=700'
+  );
+
+  const timer = setInterval(() => {
+    if (popup.closed) {
+      clearInterval(timer);
+      window.location.href = '/app.html';
+    }
+  }, 500);
+}
+</script>
   </div>
 </body>
 </html>
