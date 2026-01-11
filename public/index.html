@@ -1,33 +1,19 @@
 
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-  <meta charset="UTF-8" />
-  <title>NeСкам</title>
-  <link rel="stylesheet" href="/css/style.css" />
+<!DOCTYPE html><html lang="ru"><head>
+<meta charset="UTF-8">
+<title>NeСкам</title>
+<link rel="stylesheet" href="/css/style.css">
 </head>
 <body class="login">
-  <div class="card">
-    <h1>NeСкам</h1>
-    <p>Вечернее камерное событие для своих</p>
-<button class="btn" onclick="loginWithDiscord()">Войти через Discord</button>
-
+<div class="card">
+<h1>NeСкам</h1>
+<p>Камерное вечернее событие</p>
+<button class="btn" onclick="login()">Войти через Discord</button>
+</div>
 <script>
-function loginWithDiscord() {
-  const popup = window.open(
-    '/auth/discord',
-    'discordLogin',
-    'width=500,height=700'
-  );
-
-  const timer = setInterval(() => {
-    if (popup.closed) {
-      clearInterval(timer);
-      window.location.href = '/app.html';
-    }
-  }, 500);
+function login(){
+ const p=window.open('/auth/discord','d','width=500,height=700');
+ const i=setInterval(()=>{if(p.closed){clearInterval(i);location='/app.html';}},500);
 }
 </script>
-  </div>
-</body>
-</html>
+</body></html>

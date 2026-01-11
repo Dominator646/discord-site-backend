@@ -1,47 +1,28 @@
 
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-  <meta charset="UTF-8" />
-  <title>NeСкам</title>
-  <link rel="stylesheet" href="/css/style.css" />
+<!DOCTYPE html><html lang="ru"><head>
+<meta charset="UTF-8">
+<title>NeСкам</title>
+<link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-  <header class="top">
-    <div id="user"></div>
-  </header>
-
-  <main class="main">
-    <h1>Добро пожаловать на NeСкам</h1>
-    <p>
-      NeСкам — это вечернее событие для узкого круга друзей,
-      где мы собираемся, чтобы смотреть фильмы, аниме и сериалы
-      в ламповой и премиальной атмосфере.
-    </p>
-  </main>
-
-  <div id="loader" class="loader">
-  <div class="spinner"></div>
-</div>
-
-  <div id="profileModal" class="modal hidden">
-  <div class="modal-card">
-    <h2>Профиль</h2>
-    <img id="profileAvatar" />
-    <input id="profileName" />
-    <textarea id="profileBio" placeholder="Описание"></textarea>
-    <button>Сохранить</button>
-  </div>
-</div>
-
-  <div class="burger" onclick="toggleSidebar()">☰</div>
-
+<div id="loader" class="loader"><div class="spinner"></div></div>
+<div class="burger" onclick="toggleSidebar()">☰</div>
 <aside id="sidebar" class="sidebar hidden">
-  <button onclick="showHome()">Главная</button>
-  <button onclick="showUsers()">Пользователи</button>
+<button onclick="showHome()">Главная</button>
+<button onclick="showUsers()">Пользователи</button>
 </aside>
+<header class="top"><div id="user"></div></header>
+<main class="main" id="content"></main>
 
+<div id="profileModal" class="modal hidden">
+<div class="modal-card">
+<h2>Профиль</h2>
+<img id="profileAvatar">
+<input id="profileName">
+<textarea id="profileBio"></textarea>
+<button onclick="saveProfile()">Сохранить</button>
+<button onclick="closeProfile()">Закрыть</button>
+</div></div>
 
-  <script src="/js/app.js"></script>
-</body>
-</html>
+<script src="/js/app.js"></script>
+</body></html>
