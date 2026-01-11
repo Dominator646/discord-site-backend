@@ -115,6 +115,24 @@ body {
   border-radius: 20px;
   width: 400px;
 }
+  
+.burger {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 260px;
+  height: 100%;
+  background: #0e1024;
+  padding: 80px 20px;
+}
 
 
 @keyframes spin {
