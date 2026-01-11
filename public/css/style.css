@@ -74,6 +74,33 @@ body {
   animation: spin 1s linear infinite;
 }
 
+.avatar-wrapper {
+  position: relative;
+  cursor: pointer;
+}
+
+.user-menu {
+  position: absolute;
+  top: 60px;
+  right: 20px;
+  background: rgba(20,20,40,0.95);
+  border-radius: 12px;
+  padding: 10px;
+}
+
+.user-menu button {
+  background: none;
+  border: none;
+  color: white;
+  padding: 8px 16px;
+  cursor: pointer;
+}
+
+.hidden {
+  display: none;
+}
+
+
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
