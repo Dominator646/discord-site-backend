@@ -9,6 +9,8 @@ async function loadUser() {
   const u = await res.json();
 
   renderTopBar(u);
+
+  document.getElementById('loader').style.display = 'none';
 }
 
 function renderTopBar(u) {
