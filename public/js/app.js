@@ -27,4 +27,12 @@ function renderTopBar(u) {
   `;
 }
 
+function toggleUserMenu() {
+  document.getElementById('userMenu').classList.toggle('hidden');
+}
+
+function openProfile() {
+  document.getElementById('profileModal').classList.remove('hidden');
+}
+
 loadUser();
