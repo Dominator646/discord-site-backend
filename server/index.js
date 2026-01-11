@@ -78,7 +78,22 @@ app.get('/auth/discord/callback', async (req, res) => {
   );
 
   res.cookie('token', token, { httpOnly: true });
-  res.redirect('/app.html');
+  res.send(`
+<!DOCTYPE html>
+<html>
+<body>
+<script>
+  if (window.opener) {
+    window.opener.location.href = '/app.html';
+    window.close();
+  } else {
+    window.location.href = '/app.html';
+  }
+</script>
+</body>
+</html>
+`);
+
 });
 
 app.get('/api/me', async (req, res) => {
