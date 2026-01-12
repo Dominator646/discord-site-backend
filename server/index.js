@@ -5,6 +5,7 @@ import jwt from 'jsonwebtoken';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createClient } from '@supabase/supabase-js';
+import multer from 'multer';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -111,3 +112,40 @@ app.get('/api/users', async (req,res)=>{
 });
 
 app.listen(PORT,()=>console.log('NeСкам running'));
+
+const storage = multer.diskStorage({
+  destination: 'public/uploads/',
+  filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname)
+});
+const upload = multer({ storage });
+
+// API Галлереи
+app.get('/api/gallery', async (req, res) => {
+  const { data } = await supabase.from('gallery').select('*').order('created_at', { ascending: false });
+  res.json(data);
+});
+
+app.post('/api/gallery/upload', upload.single('photo'), async (req, res) => {
+  try {
+    const d = jwt.verify(req.cookies.token, process.env.JWT_SECRET);
+    const { data: user } = await supabase.from('users').select('username').eq('discord_id', d.discord_id).single();
+    
+    const url = `/uploads/${req.file.filename}`;
+    
+    await supabase.from('gallery').insert({
+      url: url,
+      user_id: d.discord_id,
+      username: user.username
+    });
+    
+    res.json({ ok: true });
+  } catch (e) { res.status(401).send(); }
+});
+
+app.delete('/api/gallery/:id', async (req, res) => {
+    try {
+        const d = jwt.verify(req.cookies.token, process.env.JWT_SECRET);
+        await supabase.from('gallery').delete().eq('id', req.params.id).eq('user_id', d.discord_id);
+        res.json({ ok: true });
+    } catch (e) { res.status(401).send(); }
+});
