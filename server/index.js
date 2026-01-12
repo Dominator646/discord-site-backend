@@ -1,4 +1,3 @@
-
 import express from 'express';
 import fetch from 'node-fetch';
 import cookieParser from 'cookie-parser';
@@ -58,7 +57,7 @@ app.get('/auth/discord/callback', async (req,res)=>{
     await supabase.from('users').insert({
       discord_id:user.id,
       username:user.username,
-      avatar:user.avatar,
+      avatar:user.avatar, // Сохраняем хеш аватарки discord
       bio:'',
       coins:100,
       last_login:new Date().toISOString()
@@ -87,13 +86,22 @@ app.get('/api/me', async (req,res)=>{
 app.post('/api/profile', async (req,res)=>{
   try{
     const d = jwt.verify(req.cookies.token,process.env.JWT_SECRET);
-    await supabase.from('users').update(req.body).eq('discord_id',d.discord_id);
+    // Берем только разрешенные поля, чтобы не накрутили монеты
+    const { username, bio, avatar } = req.body;
+    
+    await supabase.from('users')
+      .update({ username, bio, avatar })
+      .eq('discord_id',d.discord_id);
+      
     res.json({ok:true});
-  }catch{res.status(401).json({});}
+  }catch(e){
+    console.log(e);
+    res.status(401).json({});
+  }
 });
 
 app.get('/api/users', async (req,res)=>{
-  const {data} = await supabase.from('users').select('discord_id,username,avatar,bio');
+  const {data} = await supabase.from('users').select('discord_id,username,avatar,bio,coins');
   res.json(data);
 });
 
