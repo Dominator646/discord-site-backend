@@ -1,3 +1,4 @@
+/* Основные переменные для "вечерней" темы */
 :root {
   --bg-dark: #090b18;
   --bg-card: #14172b;
@@ -6,54 +7,18 @@
   --text-main: #ffffff;
   --text-muted: #a0a3bd;
   --gold: #ffd700;
-  --modal-bg: rgba(15, 17, 30, 0.95);
+  --sidebar-width: 25vw;
 }
 
 body {
   margin: 0;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: 'Inter', -apple-system, sans-serif;
   background: var(--bg-dark);
   color: var(--text-main);
   overflow-x: hidden;
 }
 
-/* Login Page */
-.login {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  background: radial-gradient(circle at top, #1e223f 0%, #090b18 100%);
-}
-
-.card {
-  background: rgba(255, 255, 255, 0.03);
-  padding: 60px;
-  border-radius: 24px;
-  text-align: center;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(10px);
-  box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-}
-
-.btn {
-  background: var(--primary);
-  color: white;
-  padding: 14px 28px;
-  border: none;
-  border-radius: 12px;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 16px;
-  transition: transform 0.2s, background 0.2s;
-}
-
-.btn:hover {
-  transform: translateY(-2px);
-  background: #4752c4;
-}
-
-/* Loader */
+/* Лоадер */
 .loader {
   position: fixed;
   inset: 0;
@@ -61,28 +26,102 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  z-index: 2000;
 }
 
 .spinner {
   width: 50px;
   height: 50px;
-  border: 3px solid rgba(255,255,255,.1);
-  border-top: 3px solid var(--primary);
+  border: 4px solid rgba(255,255,255,.1);
+  border-top: 4px solid var(--primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
 
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* Header & Nav */
+/* Шапка и мини-меню профиля */
+.top {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+}
+
+.avatar-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background: var(--bg-card);
+  padding: 8px 15px;
+  border-radius: 50px;
+  border: 1px solid rgba(255,255,255,0.05);
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.avatar-wrapper:hover {
+  background: var(--bg-hover);
+}
+
+.avatar-wrapper img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.coins-badge {
+  background: rgba(255, 215, 0, 0.1);
+  color: var(--gold);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+/* Выдвижное мини-меню (справа) */
+.user-menu {
+  position: absolute;
+  top: 65px;
+  right: -250px; /* Изначально спрятано */
+  width: 200px;
+  background: var(--bg-card);
+  border-radius: 15px;
+  padding: 10px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  border: 1px solid rgba(255,255,255,0.05);
+  transition: right 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.user-menu.active {
+  right: 0; /* Выезжает при нажатии */
+}
+
+.user-menu button {
+  width: 100%;
+  padding: 12px;
+  background: transparent;
+  border: none;
+  color: white;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.user-menu button:hover {
+  background: var(--bg-hover);
+}
+
+/* Сайдбар (слева) */
 .burger {
   position: fixed;
   top: 25px;
   left: 25px;
   font-size: 24px;
   cursor: pointer;
-  z-index: 100;
+  z-index: 1100;
   background: var(--bg-card);
   width: 45px;
   height: 45px;
@@ -90,100 +129,20 @@ body {
   justify-content: center;
   align-items: center;
   border-radius: 12px;
-  transition: 0.3s;
 }
 
-.burger:hover {
-  background: var(--bg-hover);
-}
-
-.top {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  z-index: 90;
-}
-
-.user-display {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  cursor: pointer;
-  background: rgba(20, 23, 43, 0.8);
-  padding: 8px 15px 8px 8px;
-  border-radius: 50px;
-  border: 1px solid rgba(255,255,255,0.05);
-  transition: 0.3s;
-}
-
-.user-display:hover {
-  background: var(--bg-hover);
-}
-
-.coins-badge {
-  background: rgba(255, 215, 0, 0.15);
-  color: var(--gold);
-  padding: 5px 12px;
-  border-radius: 20px;
-  font-weight: 600;
-  font-size: 14px;
-  border: 1px solid rgba(255, 215, 0, 0.2);
-}
-
-.avatar-small {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  object-fit: cover;
-}
-
-.user-menu {
-  position: absolute;
-  top: 65px;
-  right: 0;
-  background: var(--bg-card);
-  border-radius: 16px;
-  padding: 10px;
-  width: 180px;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-  border: 1px solid rgba(255,255,255,0.05);
-  transform-origin: top right;
-  transition: 0.2s;
-}
-
-.user-menu button {
-  display: block;
-  width: 100%;
-  background: none;
-  border: none;
-  color: var(--text-main);
-  padding: 12px;
-  text-align: left;
-  cursor: pointer;
-  border-radius: 8px;
-  transition: 0.2s;
-}
-
-.user-menu button:hover {
-  background: rgba(255,255,255,0.05);
-}
-
-/* Sidebar */
 .sidebar {
   position: fixed;
   top: 0;
   left: 0;
-  width: 25vw;
+  width: var(--sidebar-width);
   min-width: 250px;
-  max-width: 350px;
   height: 100%;
   background: var(--bg-card);
+  z-index: 1050;
   padding-top: 100px;
-  transform: translateX(0);
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  z-index: 99;
+  transition: transform 0.3s ease;
   border-right: 1px solid rgba(255,255,255,0.05);
-  box-shadow: 10px 0 50px rgba(0,0,0,0.5);
 }
 
 .sidebar.hidden {
@@ -192,146 +151,159 @@ body {
 
 .nav-btn {
   display: block;
-  width: 90%;
+  width: 85%;
   margin: 10px auto;
-  padding: 15px 25px;
+  padding: 15px 20px;
   background: transparent;
   border: none;
   color: var(--text-muted);
   text-align: left;
-  font-size: 16px;
   cursor: pointer;
   border-radius: 12px;
+  font-size: 16px;
   transition: 0.2s;
 }
 
-.nav-btn:hover, .nav-btn.active {
+.nav-btn:hover {
   background: var(--bg-hover);
   color: white;
 }
 
-/* Main Content */
+/* Основной контент */
 .main {
+  margin-left: 0;
   padding: 100px 50px;
-  max-width: 1200px;
-  margin: 0 auto;
-  transition: margin-left 0.3s;
+  transition: margin-left 0.3s ease;
 }
 
-h1 { font-size: 2.5rem; margin-bottom: 10px; }
-h2 { margin-top: 0; }
-p { color: var(--text-muted); line-height: 1.6; }
+.sidebar:not(.hidden) ~ .main {
+  margin-left: var(--sidebar-width);
+}
 
-/* Grid for Users */
+/* Стили карточек пользователей */
 .users-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 25px;
   margin-top: 30px;
 }
 
 .user-card {
   background: var(--bg-card);
-  padding: 25px;
   border-radius: 20px;
+  padding: 30px;
   text-align: center;
   border: 1px solid rgba(255,255,255,0.03);
   transition: 0.3s;
-  position: relative;
-  overflow: hidden;
 }
 
 .user-card:hover {
-  transform: translateY(-5px);
+  transform: translateY(-10px);
   background: var(--bg-hover);
-  border-color: rgba(255,255,255,0.1);
+  border-color: var(--primary);
 }
 
 .user-card img {
-  width: 80px;
-  height: 80px;
+  width: 90px;
+  height: 90px;
   border-radius: 50%;
   object-fit: cover;
   border: 3px solid var(--bg-dark);
   margin-bottom: 15px;
 }
 
-.user-card h3 { margin: 0 0 5px 0; font-size: 18px; }
-.user-card p { font-size: 14px; margin: 0; }
+.user-card h3 { margin: 10px 0 5px; }
+.user-card p { color: var(--text-muted); font-size: 14px; line-height: 1.4; }
 
-/* Modal */
+/* Модальное окно (Профиль) */
 .modal {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.8);
-  backdrop-filter: blur(5px);
+  background: rgba(0,0,0,0.85);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
-  opacity: 1;
-  transition: opacity 0.2s;
+  z-index: 2000;
+  backdrop-filter: blur(8px);
 }
 
-.modal.hidden {
-  opacity: 0;
-  pointer-events: none;
-}
+.modal.hidden { display: none; }
 
 .modal-card {
   background: #1a1e36;
+  width: 90%;
+  max-width: 450px;
   padding: 40px;
   border-radius: 24px;
-  width: 400px;
   text-align: center;
-  box-shadow: 0 25px 60px rgba(0,0,0,0.6);
-  border: 1px solid rgba(255,255,255,0.05);
+  position: relative;
 }
 
 .modal-card img {
-  width: 100px;
-  height: 100px;
+  width: 120px;
+  height: 120px;
   border-radius: 50%;
-  margin: 20px auto;
-  object-fit: cover;
-  border: 4px solid var(--bg-dark);
-  box-shadow: 0 0 20px rgba(0,0,0,0.3);
+  margin-bottom: 20px;
+  border: 4px solid var(--primary);
 }
 
 .input-group {
-  margin-bottom: 15px;
+  margin-bottom: 20px;
   text-align: left;
 }
 
 .input-group label {
+  display: block;
   font-size: 12px;
   color: var(--text-muted);
-  display: block;
-  margin-bottom: 5px;
-  margin-left: 5px;
+  margin-bottom: 8px;
 }
 
 input, textarea {
   width: 100%;
-  background: rgba(0,0,0,0.2);
+  background: #090b18;
   border: 1px solid rgba(255,255,255,0.1);
   padding: 12px;
   border-radius: 10px;
   color: white;
-  font-family: inherit;
   box-sizing: border-box;
-  resize: vertical;
 }
 
-input:focus, textarea:focus {
-  outline: none;
-  border-color: var(--primary);
+.btn-save {
+  background: var(--primary);
+  color: white;
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 12px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 10px;
 }
 
-.modal-actions {
+.btn-close {
+  background: transparent;
+  color: var(--text-muted);
+  border: none;
+  margin-top: 15px;
+  cursor: pointer;
+}
+
+/* Для страницы входа */
+.login {
   display: flex;
-  gap: 10px;
-  margin-top: 25px;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background: radial-gradient(circle at center, #1e223f 0%, #090b18 100%);
+}
+
+.login .card {
+  background: var(--bg-card);
+  padding: 60px;
+  border-radius: 30px;
+  text-align: center;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5);
 }
 
 .btn-primary { flex: 1; background: var(--primary); color: white; }
