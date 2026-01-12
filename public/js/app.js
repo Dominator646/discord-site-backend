@@ -20,9 +20,19 @@ async function loadUser() {
 
 // Функция определения аватарки (Discord или ссылка)
 function getAvatar(user) {
-    if (!user) return '';
-    if (user.avatar && user.avatar.startsWith('http')) return user.avatar;
-    if (user.avatar) return `https://cdn.discordapp.com/avatars/${user.discord_id}/${user.avatar}.png`;
+    if (!user) return 'https://cdn.discordapp.com/embed/avatars/0.png';
+    
+    // 1. Если пользователь вставил свою прямую ссылку (через настройки профиля)
+    if (user.avatar && user.avatar.startsWith('http')) {
+        return user.avatar;
+    }
+    
+    // 2. Если у пользователя есть аватарка от самого Discord (хэш)
+    if (user.avatar && user.avatar.length > 0) {
+        return `https://cdn.discordapp.com/avatars/${user.discord_id}/${user.avatar}.png`;
+    }
+    
+    // 3. Если поле пустое (null или ""), отдаем стандартный аватар Discord
     return 'https://cdn.discordapp.com/embed/avatars/0.png';
 }
 
