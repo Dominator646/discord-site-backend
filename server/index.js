@@ -6,6 +6,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { createClient } from '@supabase/supabase-js';
 import multer from 'multer';
+import { v2 as cloudinary } from 'cloudinary';
+import { CloudinaryStorage } from 'multer-storage-cloudinary';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -22,6 +24,24 @@ const supabase = createClient(
 
 const PORT = process.env.PORT || 3000;
 
+// --- НАСТРОЙКА CLOUDINARY ---
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'gallery',
+    allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
+  },
+});
+
+const upload = multer({ storage });
+
+// --- AUTH ROUTES ---
 app.get('/auth/discord', (req,res)=>{
   const p = new URLSearchParams({
     client_id:process.env.DISCORD_CLIENT_ID,
@@ -36,105 +56,52 @@ app.get('/auth/discord/callback', async (req,res)=>{
   const code = req.query.code;
   if(!code) return res.redirect('/');
 
-  const t = await fetch('https://discord.com/api/oauth2/token',{
-    method:'POST',
-    headers:{'Content-Type':'application/x-www-form-urlencoded'},
-    body:new URLSearchParams({
-      client_id:process.env.DISCORD_CLIENT_ID,
-      client_secret:process.env.DISCORD_CLIENT_SECRET,
-      grant_type:'authorization_code',
-      code,
-      redirect_uri:process.env.DISCORD_REDIRECT_URI
-    })
-  }).then(r=>r.json());
+  try {
+    const t = await fetch('https://discord.com/api/oauth2/token',{
+      method:'POST',
+      headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body:new URLSearchParams({
+        client_id:process.env.DISCORD_CLIENT_ID,
+        client_secret:process.env.DISCORD_CLIENT_SECRET,
+        grant_type:'authorization_code',
+        code,
+        redirect_uri:process.env.DISCORD_REDIRECT_URI
+      })
+    }).then(r=>r.json());
 
-  const user = await fetch('https://discord.com/api/users/@me',{
-    headers:{Authorization:`Bearer ${t.access_token}`}
-  }).then(r=>r.json());
+    const user = await fetch('https://discord.com/api/users/@me',{
+      headers:{Authorization:`Bearer ${t.access_token}`}
+    }).then(r=>r.json());
 
-  const {data:ex} = await supabase.from('users').select('*').eq('discord_id',user.id).single();
+    const { data: existingUser } = await supabase.from('users').select('*').eq('discord_id', user.id).single();
 
-  if(!ex){
-    await supabase.from('users').insert({
-      discord_id:user.id,
-      username:user.username,
-      avatar:user.avatar, // Сохраняем хеш аватарки discord
-      bio:'',
-      coins:100,
-      last_login:new Date().toISOString()
-    });
-  } else {
-    await supabase.from('users').update({last_login:new Date().toISOString()}).eq('discord_id',user.id);
+    if (!existingUser) {
+      await supabase.from('users').insert({
+        discord_id: user.id,
+        username: user.username,
+        avatar: user.avatar
+      });
+    }
+
+    const token = jwt.sign({ discord_id: user.id }, process.env.JWT_SECRET);
+    res.cookie('token', token, { httpOnly: true });
+    res.redirect('/app.html');
+  } catch(e) {
+    res.redirect('/');
   }
-
-  const jwtToken = jwt.sign({discord_id:user.id},process.env.JWT_SECRET,{expiresIn:'7d'});
-  res.cookie('token',jwtToken,{httpOnly:true});
-
-  res.send(`<script>
-    if(window.opener){window.opener.location='/app.html';window.close();}
-    else location='/app.html';
-  </script>`);
 });
 
 app.get('/api/me', async (req,res)=>{
-  try{
-    const d = jwt.verify(req.cookies.token,process.env.JWT_SECRET);
-    const {data} = await supabase.from('users').select('*').eq('discord_id',d.discord_id).single();
-    res.json(data);
-  }catch{res.status(401).json({});}
-});
-
-app.post('/api/profile', async (req,res)=>{
-  try{
-    const d = jwt.verify(req.cookies.token, process.env.JWT_SECRET);
-    const { username, bio, avatar } = req.body;
-    
-    const { error } = await supabase.from('users')
-      .update({ username, bio, avatar })
-      .eq('discord_id', d.discord_id);
-      
-    if (error) throw error;
-    res.json({ok:true});
-  } catch(e) {
-    res.status(401).json({error: "Unauthorized"});
-  }
-});
-
-// Получение ВСЕХ пользователей (для вкладки Пользователи)
-app.get('/api/users', async (req,res)=>{
   try {
-    const { data, error } = await supabase.from('users').select('*');
-    if (error) throw error;
-    res.json(data || []);
+    const d = jwt.verify(req.cookies.token, process.env.JWT_SECRET);
+    const { data } = await supabase.from('users').select('*').eq('discord_id', d.discord_id).single();
+    res.json(data);
   } catch(e) {
-    res.status(500).json([]);
+    res.status(401).json({error: 'Unauthorized'});
   }
 });
 
-app.listen(PORT,()=>console.log('NeСкам running'));
-
-import { v2 as cloudinary } from 'cloudinary';
-import { CloudinaryStorage } from 'multer-storage-cloudinary';
-
-// Настройка Cloudinary (данные берутся из переменных окружения Railway)
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
-});
-
-// Настройка хранилища Cloudinary для Multer
-const storage = new CloudinaryStorage({
-  cloudinary: cloudinary,
-  params: {
-    folder: 'gallery', // Название папки в твоем Cloudinary
-    allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
-  },
-});
-
-const upload = multer({ storage });
-
-// API Галлереи
+// --- GALLERY API ---
 app.get('/api/gallery', async (req, res) => {
   const { data } = await supabase.from('gallery').select('*').order('created_at', { ascending: false });
   res.json(data);
@@ -145,22 +112,22 @@ app.post('/api/gallery/upload', upload.single('photo'), async (req, res) => {
     const d = jwt.verify(req.cookies.token, process.env.JWT_SECRET);
     const { data: user } = await supabase.from('users').select('username').eq('discord_id', d.discord_id).single();
     
+    // ВАЖНО: используем req.file.path для ссылки из Cloudinary
     const url = req.file.path;
     
-    await supabase.from('gallery').insert({
+    const { error } = await supabase.from('gallery').insert({
       url: url,
       user_id: d.discord_id,
       username: user.username
     });
+
+    if (error) throw error;
     
     res.json({ ok: true });
-  } catch (e) { res.status(401).send(); }
+  } catch (e) {
+    console.error("Upload Error:", e);
+    res.status(500).json({ error: e.message });
+  }
 });
 
-app.delete('/api/gallery/:id', async (req, res) => {
-    try {
-        const d = jwt.verify(req.cookies.token, process.env.JWT_SECRET);
-        await supabase.from('gallery').delete().eq('id', req.params.id).eq('user_id', d.discord_id);
-        res.json({ ok: true });
-    } catch (e) { res.status(401).send(); }
-});
+app.listen(PORT,()=>console.log('NeСкам running on port ' + PORT));
