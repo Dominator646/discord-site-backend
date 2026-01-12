@@ -84,24 +84,23 @@ app.get('/api/me', async (req,res)=>{
 });
 
 app.post('/api/profile', async (req,res)=>{
-  try{
-    const d = jwt.verify(req.cookies.token,process.env.JWT_SECRET);
-    // Берем только разрешенные поля, чтобы не накрутили монеты
+  try {
+    const d = jwt.verify(req.cookies.token, process.env.JWT_SECRET);
     const { username, bio, avatar } = req.body;
     
+    // Сохраняем ник, описание и аватарку (ссылку или хеш)
     await supabase.from('users')
       .update({ username, bio, avatar })
-      .eq('discord_id',d.discord_id);
+      .eq('discord_id', d.discord_id);
       
-    res.json({ok:true});
-  }catch(e){
-    console.log(e);
-    res.status(401).json({});
+    res.json({ ok: true });
+  } catch(e) {
+    res.status(401).json({ error: 'Unauthorized' });
   }
 });
 
 app.get('/api/users', async (req,res)=>{
-  const {data} = await supabase.from('users').select('discord_id,username,avatar,bio,coins');
+  const { data } = await supabase.from('users').select('discord_id, username, avatar, bio');
   res.json(data);
 });
 
