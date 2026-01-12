@@ -262,3 +262,38 @@ async function deletePhoto(id) {
         alert('Ошибка при удалении');
     }
 }
+
+let galleryInterval = null; // Переменная для хранения таймера
+
+async function showGallery() {
+    // Очищаем старый таймер, если он был
+    if (galleryInterval) clearInterval(galleryInterval);
+
+    const content = document.getElementById('content');
+    content.innerHTML = `
+        <div class="gallery-header">
+            <h1>Галерея событий</h1>
+            <label class="upload-btn">
+                <input type="file" id="photoInput" accept="image/*" onchange="uploadPhoto()" style="display:none">
+                📸 Загрузить фото
+            </label>
+        </div>
+        <div id="galleryGrid" class="gallery-grid"></div>
+    `;
+
+    // Загружаем фото сразу
+    await refreshGalleryGrid();
+
+    // Запускаем проверку новых фото каждые 5 секунд
+    galleryInterval = setInterval(async () => {
+        // Проверяем, находится ли пользователь всё еще в галерее
+        const gridExists = document.getElementById('galleryGrid');
+        if (gridExists) {
+            await refreshGalleryGrid();
+        } else {
+            // Если ушел из галереи — выключаем таймер
+            clearInterval(galleryInterval);
+            galleryInterval = null;
+        }
+    }, 5000); 
+}
