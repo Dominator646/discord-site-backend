@@ -12,16 +12,14 @@
 
   <div class="burger" onclick="toggleSidebar()">☰</div>
 
-  <aside id="sidebar" class="sidebar hidden">
-    <button class="nav-btn" onclick="showHome()">🏠 Главная</button>
-    <button class="nav-btn" onclick="openProfileFromMenu()">👤 Профиль</button>
-    <button class="nav-btn" onclick="showUsers()">👥 Пользователи</button>
-  </aside>
+<aside id="sidebar" class="sidebar hidden">
+  <button onclick="showHome()">Главная</button>
+  <button onclick="showUsers()">Пользователи</button>
+</aside>
 
-  <header class="top">
-    <div id="userContainer" class="user-wrapper">
-      </div>
-  </header>
+<header class="top">
+  <div id="user" class="user-area"></div>
+</header>
 
   <main class="main" id="content"></main>
 
