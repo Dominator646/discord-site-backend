@@ -432,26 +432,29 @@ input:focus, textarea:focus {
 .lightbox {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.95);
+  background: rgba(0,0,0,0.92);
   z-index: 3000;
   display: flex;
   justify-content: center;
   align-items: center;
   backdrop-filter: blur(10px);
+  cursor: pointer; /* Показываем, что по фону можно кликнуть */
 }
 
 .lightbox-content {
   position: relative;
-  max-width: 80%;
-  max-height: 80%;
-  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: default; /* Внутри контента курсор обычный */
 }
 
 .lightbox img {
-  max-width: 100%;
+  max-width: 85vw;
   max-height: 80vh;
-  border-radius: 10px;
-  box-shadow: 0 0 50px rgba(0,0,0,0.5);
+  border-radius: 12px;
+  box-shadow: 0 0 40px rgba(0,0,0,0.8);
+  user-select: none;
 }
 
 .lightbox-info {
@@ -469,17 +472,18 @@ input:focus, textarea:focus {
   background: rgba(255,255,255,0.1);
   color: white;
   border: none;
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  font-size: 30px;
+  width: 50px;
+  height: 80px; /* Сделаем их вытянутыми, чтобы было удобнее */
+  border-radius: 10px;
+  font-size: 24px;
   cursor: pointer;
-  transition: 0.2s;
+  z-index: 3001;
+  transition: background 0.2s;
 }
 
 .nav-arrow:hover { background: var(--primary); }
-.arrow-left { left: -100px; }
-.arrow-right { right: -100px; }
+.arrow-left { left: -70px; }
+.arrow-right { right: -70px; }
 
 .delete-photo-btn {
   background: #ff4d4d;
@@ -489,6 +493,11 @@ input:focus, textarea:focus {
   border-radius: 8px;
   margin-top: 10px;
   cursor: pointer;
+}
+
+@media (max-width: 800px) {
+    .arrow-left { left: 10px; }
+    .arrow-right { right: 10px; }
 }
 
 .btn-primary { flex: 1; background: var(--primary); color: white; }
