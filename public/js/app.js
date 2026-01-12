@@ -106,19 +106,29 @@ function closeProfile() {
 
 async function saveProfile() {
     const username = document.getElementById('profileName').value;
+    const avatar = document.getElementById('profileAvatarUrl').value;
     const bio = document.getElementById('profileBio').value;
-    const customAvatar = document.getElementById('profileAvatarUrl').value;
-    
-    // Если ввели URL - сохраняем его, иначе оставляем старый хеш Discord
-    const avatar = customAvatar || me.avatar;
 
-    await fetch('/api/profile', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ username, bio, avatar })
-    });
-    
-    location.reload(); // Перезагружаем страницу, чтобы обновить данные везде
+    try {
+        const r = await fetch('/api/save-profile', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, avatar, bio })
+        });
+
+        const result = await r.json();
+
+        if (result.ok) {
+            alert('Профиль успешно сохранен!');
+            closeProfile();
+            // Сразу обновляем данные на странице без перезагрузки
+            loadUser(); 
+        } else {
+            alert('Ошибка при сохранении: ' + result.error);
+        }
+    } catch (err) {
+        console.error("Ошибка сети:", err);
+    }
 }
 
 loadUser();
