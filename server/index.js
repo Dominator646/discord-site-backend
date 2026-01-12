@@ -91,23 +91,45 @@ app.get('/api/gallery', async (req, res) => {
 
 app.post('/api/gallery/upload', upload.single('photo'), async (req, res) => {
   try {
-    if (!req.file) return res.status(400).json({ error: 'No file' });
+    if (!req.file) return res.status(400).json({ error: 'Файл не выбран' });
+
+    // Проверяем авторизацию
     const d = jwt.verify(req.cookies.token, process.env.JWT_SECRET);
-    const { data: user } = await supabase.from('users').select('username').eq('discord_id', d.discord_id).single();
     
-    // Возвращаем путь как был
-    const url = `/uploads/${req.file.filename}`;
+    // Генерируем уникальное имя файла
+    const fileName = `${Date.now()}-${Math.round(Math.random() * 1E9)}-${req.file.originalname}`;
+
+    // 1. Загружаем файл в Storage Supabase
+    const { data: storageData, error: storageError } = await supabase.storage
+      .from('gallery')
+      .upload(fileName, req.file.buffer, {
+        contentType: req.file.mimetype,
+        upsert: false
+      });
+
+    if (storageError) throw storageError;
+
+    // 2. Получаем публичную прямую ссылку на файл
+    const { data: { publicUrl } } = supabase.storage
+      .from('gallery')
+      .getPublicUrl(fileName);
+
+    // 3. Сохраняем эту ссылку в таблицу базы данных
+    const { data: user } = await supabase.from('users')
+      .select('username')
+      .eq('discord_id', d.discord_id)
+      .single();
     
     await supabase.from('gallery').insert({
-      url: url,
+      url: publicUrl, // Теперь тут вечная ссылка из Supabase Storage
       user_id: d.discord_id,
       username: user.username
     });
     
     res.json({ ok: true });
   } catch (e) { 
-    console.error(e);
-    res.status(401).json({ error: 'Upload failed' }); 
+    console.error("Ошибка при Redeploy-safe загрузке:", e);
+    res.status(500).json({ error: 'Ошибка сохранения файла в облако' }); 
   }
 });
 
