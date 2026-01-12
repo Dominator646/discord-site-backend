@@ -1,28 +1,57 @@
-
-<!DOCTYPE html><html lang="ru"><head>
-<meta charset="UTF-8">
-<title>NeСкам</title>
-<link rel="stylesheet" href="/css/style.css">
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>NeСкам | Вечерний просмотр</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
-<div id="loader" class="loader"><div class="spinner"></div></div>
-<div class="burger" onclick="toggleSidebar()">☰</div>
-<aside id="sidebar" class="sidebar hidden">
-<button onclick="showHome()">Главная</button>
-<button onclick="showUsers()">Пользователи</button>
-</aside>
-<header class="top"><div id="user"></div></header>
-<main class="main" id="content"></main>
+  
+  <div id="loader" class="loader"><div class="spinner"></div></div>
 
-<div id="profileModal" class="modal hidden">
-<div class="modal-card">
-<h2>Профиль</h2>
-<img id="profileAvatar">
-<input id="profileName">
-<textarea id="profileBio"></textarea>
-<button onclick="saveProfile()">Сохранить</button>
-<button onclick="closeProfile()">Закрыть</button>
-</div></div>
+  <div class="burger" onclick="toggleSidebar()">☰</div>
 
-<script src="/js/app.js"></script>
-</body></html>
+  <aside id="sidebar" class="sidebar hidden">
+    <button class="nav-btn" onclick="showHome()">🏠 Главная</button>
+    <button class="nav-btn" onclick="openProfileFromMenu()">👤 Профиль</button>
+    <button class="nav-btn" onclick="showUsers()">👥 Пользователи</button>
+  </aside>
+
+  <header class="top">
+    <div id="userContainer" class="user-wrapper">
+      </div>
+  </header>
+
+  <main class="main" id="content"></main>
+
+  <div id="profileModal" class="modal hidden">
+    <div class="modal-card">
+      <h2>Редактирование профиля</h2>
+      <img id="profileAvatarPreview" src="">
+      
+      <div class="input-group">
+        <label>Никнейм</label>
+        <input id="profileName" type="text" placeholder="Ваше имя">
+      </div>
+      
+      <div class="input-group">
+        <label>Ссылка на аватарку</label>
+        <input id="profileAvatarUrl" type="text" placeholder="https://..." oninput="updateAvatarPreview()">
+      </div>
+
+      <div class="input-group">
+        <label>О себе</label>
+        <textarea id="profileBio" rows="3" placeholder="Пару слов о себе..."></textarea>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-primary" onclick="saveProfile()">Сохранить</button>
+        <button class="btn btn-secondary" onclick="closeProfile()">Отмена</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>
