@@ -6,11 +6,16 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { createClient } from '@supabase/supabase-js';
 import multer from 'multer';
-import { v2 as cloudinary } from 'cloudinary';
-import { CloudinaryStorage } from 'multer-storage-cloudinary';
+import fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Создаем папку, если её нет (важно для Volume)
+const uploadDir = path.join(__dirname, '../public/uploads');
+if (!fs.existsSync(uploadDir)){
+    fs.mkdirSync(uploadDir, { recursive: true });
+}
 
 const app = express();
 app.use(express.json());
@@ -24,24 +29,14 @@ const supabase = createClient(
 
 const PORT = process.env.PORT || 3000;
 
-// --- НАСТРОЙКА CLOUDINARY ---
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
+// Старый добрый конфиг Multer на диск
+const storage = multer.diskStorage({
+  destination: 'public/uploads/',
+  filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname)
 });
-
-const storage = new CloudinaryStorage({
-  cloudinary: cloudinary,
-  params: {
-    folder: 'gallery',
-    allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
-  },
-});
-
 const upload = multer({ storage });
 
-// --- AUTH ROUTES ---
+// Роуты авторизации (оставляем как были)
 app.get('/auth/discord', (req,res)=>{
   const p = new URLSearchParams({
     client_id:process.env.DISCORD_CLIENT_ID,
@@ -55,7 +50,6 @@ app.get('/auth/discord', (req,res)=>{
 app.get('/auth/discord/callback', async (req,res)=>{
   const code = req.query.code;
   if(!code) return res.redirect('/');
-
   try {
     const t = await fetch('https://discord.com/api/oauth2/token',{
       method:'POST',
@@ -68,27 +62,17 @@ app.get('/auth/discord/callback', async (req,res)=>{
         redirect_uri:process.env.DISCORD_REDIRECT_URI
       })
     }).then(r=>r.json());
-
     const user = await fetch('https://discord.com/api/users/@me',{
       headers:{Authorization:`Bearer ${t.access_token}`}
     }).then(r=>r.json());
-
     const { data: existingUser } = await supabase.from('users').select('*').eq('discord_id', user.id).single();
-
     if (!existingUser) {
-      await supabase.from('users').insert({
-        discord_id: user.id,
-        username: user.username,
-        avatar: user.avatar
-      });
+      await supabase.from('users').insert({ discord_id: user.id, username: user.username, avatar: user.avatar });
     }
-
     const token = jwt.sign({ discord_id: user.id }, process.env.JWT_SECRET);
     res.cookie('token', token, { httpOnly: true });
     res.redirect('/app.html');
-  } catch(e) {
-    res.redirect('/');
-  }
+  } catch(e) { res.redirect('/'); }
 });
 
 app.get('/api/me', async (req,res)=>{
@@ -96,12 +80,10 @@ app.get('/api/me', async (req,res)=>{
     const d = jwt.verify(req.cookies.token, process.env.JWT_SECRET);
     const { data } = await supabase.from('users').select('*').eq('discord_id', d.discord_id).single();
     res.json(data);
-  } catch(e) {
-    res.status(401).json({error: 'Unauthorized'});
-  }
+  } catch(e) { res.status(401).json({error: 'Unauthorized'}); }
 });
 
-// --- GALLERY API ---
+// API Галереи (ТВОЙ СТАРЫЙ КОД)
 app.get('/api/gallery', async (req, res) => {
   const { data } = await supabase.from('gallery').select('*').order('created_at', { ascending: false });
   res.json(data);
@@ -109,24 +91,23 @@ app.get('/api/gallery', async (req, res) => {
 
 app.post('/api/gallery/upload', upload.single('photo'), async (req, res) => {
   try {
+    if (!req.file) return res.status(400).json({ error: 'No file' });
     const d = jwt.verify(req.cookies.token, process.env.JWT_SECRET);
     const { data: user } = await supabase.from('users').select('username').eq('discord_id', d.discord_id).single();
     
-    // ВАЖНО: используем req.file.path для ссылки из Cloudinary
-    const url = req.file.path;
+    // Возвращаем путь как был
+    const url = `/uploads/${req.file.filename}`;
     
-    const { error } = await supabase.from('gallery').insert({
+    await supabase.from('gallery').insert({
       url: url,
       user_id: d.discord_id,
       username: user.username
     });
-
-    if (error) throw error;
     
     res.json({ ok: true });
-  } catch (e) {
-    console.error("Upload Error:", e);
-    res.status(500).json({ error: e.message });
+  } catch (e) { 
+    console.error(e);
+    res.status(401).json({ error: 'Upload failed' }); 
   }
 });
 
