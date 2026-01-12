@@ -297,3 +297,48 @@ async function showGallery() {
         }
     }, 5000); 
 }
+
+async function refreshGalleryGrid() {
+    const grid = document.getElementById('galleryGrid');
+    if (!grid) return;
+
+    try {
+        const r = await fetch('/api/gallery');
+        const images = await r.json();
+
+        // Если количество фото не изменилось, ничего не делаем (экономим ресурсы)
+        if (window.lastGalleryCount === images.length) return;
+        
+        window.lastGalleryCount = images.length;
+        galleryImages = images;
+
+        grid.innerHTML = images.map((img, index) => `
+            <div class="gallery-item" onclick="openLightbox(${index})">
+                <img src="${img.url}" loading="lazy">
+                <div class="item-info">@${img.username}</div>
+            </div>
+        `).join('');
+    } catch (err) {
+        console.error("Ошибка обновления галереи:", err);
+    }
+}
+
+async function uploadPhoto() {
+    const fileInput = document.getElementById('photoInput');
+    if (!fileInput.files[0]) return;
+
+    const formData = new FormData();
+    formData.append('photo', fileInput.files[0]);
+
+    const r = await fetch('/api/gallery/upload', {
+        method: 'POST',
+        body: formData
+    });
+
+    if (r.ok) {
+        // Сбрасываем счетчик, чтобы refreshGalleryGrid точно сработал
+        window.lastGalleryCount = 0; 
+        await refreshGalleryGrid(); 
+    }
+}
+
