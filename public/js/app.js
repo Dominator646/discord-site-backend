@@ -187,19 +187,26 @@ function openLightbox(index) {
     const div = document.createElement('div');
     div.id = 'lightbox';
     div.className = 'lightbox';
+    
+    // Закрытие при клике на пустое место (на сам div .lightbox)
+    div.onclick = (e) => {
+        if (e.target.id === 'lightbox') {
+            div.remove();
+        }
+    };
+
     div.innerHTML = `
         <div class="lightbox-content">
-            <button class="nav-arrow arrow-left" onclick="changeLightboxImg(-1)">❮</button>
-            <img src="${img.url}">
-            <button class="nav-arrow arrow-right" onclick="changeLightboxImg(1)">❯</button>
+            <button class="nav-arrow arrow-left" onclick="event.stopPropagation(); changeLightboxImg(-1)">❮</button>
+            <img src="${img.url}" onclick="event.stopPropagation()">
+            <button class="nav-arrow arrow-right" onclick="event.stopPropagation(); changeLightboxImg(1)">❯</button>
             
-            <div class="lightbox-info">
+            <div class="lightbox-info" onclick="event.stopPropagation()">
                 <span class="author">@${img.username}</span>
                 <span class="date">${new Date(img.created_at).toLocaleDateString()}</span>
                 <br>
                 ${isOwner ? `<button class="delete-photo-btn" onclick="deletePhoto('${img.id}')">Удалить</button>` : ''}
             </div>
-            <button class="btn-close" style="color:white" onclick="document.getElementById('lightbox').remove()">Закрыть</button>
         </div>
     `;
     document.body.appendChild(div);
