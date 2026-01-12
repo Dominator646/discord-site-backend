@@ -84,24 +84,30 @@ app.get('/api/me', async (req,res)=>{
 });
 
 app.post('/api/profile', async (req,res)=>{
-  try {
+  try{
     const d = jwt.verify(req.cookies.token, process.env.JWT_SECRET);
     const { username, bio, avatar } = req.body;
     
-    // Сохраняем ник, описание и аватарку (ссылку или хеш)
-    await supabase.from('users')
+    const { error } = await supabase.from('users')
       .update({ username, bio, avatar })
       .eq('discord_id', d.discord_id);
       
-    res.json({ ok: true });
+    if (error) throw error;
+    res.json({ok:true});
   } catch(e) {
-    res.status(401).json({ error: 'Unauthorized' });
+    res.status(401).json({error: "Unauthorized"});
   }
 });
 
+// Получение ВСЕХ пользователей (для вкладки Пользователи)
 app.get('/api/users', async (req,res)=>{
-  const { data } = await supabase.from('users').select('discord_id, username, avatar, bio');
-  res.json(data);
+  try {
+    const { data, error } = await supabase.from('users').select('*');
+    if (error) throw error;
+    res.json(data || []);
+  } catch(e) {
+    res.status(500).json([]);
+  }
 });
 
 app.listen(PORT,()=>console.log('NeСкам running'));
