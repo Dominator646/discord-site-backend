@@ -135,21 +135,32 @@ app.post('/api/gallery/upload', upload.single('photo'), async (req, res) => {
 
 app.post('/api/save-profile', async (req, res) => {
   try {
-    // Проверяем токен пользователя
-    const d = jwt.verify(req.cookies.token, process.env.JWT_SECRET);
+    const token = req.cookies.token;
+    if (!token) return res.status(401).json({ error: 'Не авторизован' });
+
+    const d = jwt.verify(token, process.env.JWT_SECRET);
     const { username, avatar, bio } = req.body;
 
-    // Обновляем данные в Supabase
+    console.log("Пытаемся сохранить для", d.discord_id, { username, avatar, bio });
+
     const { error } = await supabase
       .from('users')
-      .update({ username, avatar, bio })
+      .update({ 
+        username: username, 
+        avatar: avatar, 
+        bio: bio 
+      })
       .eq('discord_id', d.discord_id);
 
-    if (error) throw error;
+    if (error) {
+      console.error("Ошибка Supabase:", error);
+      return res.status(500).json({ error: error.message });
+    }
+
     res.json({ ok: true });
   } catch (e) {
-    console.error("Ошибка сохранения профиля:", e);
-    res.status(500).json({ error: "Не удалось сохранить профиль" });
+    console.error("Критическая ошибка сервера:", e);
+    res.status(500).json({ error: e.message });
   }
 });
 
