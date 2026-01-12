@@ -383,5 +383,113 @@ input:focus, textarea:focus {
   margin-top: 25px;
 }
 
+/* Галлерея */
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 15px;
+  margin-top: 30px;
+}
+
+.gallery-item {
+  aspect-ratio: 1 / 1;
+  border-radius: 15px;
+  overflow: hidden;
+  background: var(--bg-card);
+  position: relative;
+  cursor: pointer;
+  border: 1px solid rgba(255,255,255,0.05);
+  transition: 0.3s;
+}
+
+.gallery-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Кнопка добавления */
+.add-photo-btn {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  border: 2px dashed rgba(255,255,255,0.2);
+  color: var(--text-muted);
+  font-size: 40px;
+  transition: 0.3s;
+}
+
+.add-photo-btn:hover {
+  border-color: var(--primary);
+  color: white;
+  background: rgba(88, 101, 242, 0.05);
+}
+
+.add-photo-btn span { font-size: 14px; margin-top: 10px; }
+
+/* Проигрыватель (Lightbox) */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.95);
+  z-index: 3000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  backdrop-filter: blur(10px);
+}
+
+.lightbox-content {
+  position: relative;
+  max-width: 80%;
+  max-height: 80%;
+  text-align: center;
+}
+
+.lightbox img {
+  max-width: 100%;
+  max-height: 80vh;
+  border-radius: 10px;
+  box-shadow: 0 0 50px rgba(0,0,0,0.5);
+}
+
+.lightbox-info {
+  margin-top: 15px;
+  color: white;
+}
+
+.lightbox-info .author { color: var(--primary); font-weight: bold; }
+.lightbox-info .date { color: var(--text-muted); font-size: 12px; margin-left: 10px; }
+
+.nav-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255,255,255,0.1);
+  color: white;
+  border: none;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  font-size: 30px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.nav-arrow:hover { background: var(--primary); }
+.arrow-left { left: -100px; }
+.arrow-right { right: -100px; }
+
+.delete-photo-btn {
+  background: #ff4d4d;
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 8px;
+  margin-top: 10px;
+  cursor: pointer;
+}
+
 .btn-primary { flex: 1; background: var(--primary); color: white; }
 .btn-secondary { flex: 1; background: rgba(255,255,255,0.1); color: white; }
