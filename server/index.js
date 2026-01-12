@@ -113,10 +113,25 @@ app.get('/api/users', async (req,res)=>{
 
 app.listen(PORT,()=>console.log('NeСкам running'));
 
-const storage = multer.diskStorage({
-  destination: 'public/uploads/',
-  filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname)
+import { v2 as cloudinary } from 'cloudinary';
+import { CloudinaryStorage } from 'multer-storage-cloudinary';
+
+// Настройка Cloudinary (данные берутся из переменных окружения Railway)
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
 });
+
+// Настройка хранилища Cloudinary для Multer
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'gallery', // Название папки в твоем Cloudinary
+    allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
+  },
+});
+
 const upload = multer({ storage });
 
 // API Галлереи
@@ -130,7 +145,7 @@ app.post('/api/gallery/upload', upload.single('photo'), async (req, res) => {
     const d = jwt.verify(req.cookies.token, process.env.JWT_SECRET);
     const { data: user } = await supabase.from('users').select('username').eq('discord_id', d.discord_id).single();
     
-    const url = `/uploads/${req.file.filename}`;
+    const url = req.file.path;
     
     await supabase.from('gallery').insert({
       url: url,
