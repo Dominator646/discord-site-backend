@@ -168,4 +168,44 @@ app.get('/api/users', async (req, res) => {
   }
 });
 
+// Удаление фотографии из галереи
+app.delete('/api/gallery/:id', async (req, res) => {
+  try {
+    // 1. Проверяем, авторизован ли пользователь
+    const token = req.cookies.token;
+    if (!token) return res.status(401).json({ error: 'Необходима авторизация' });
+    
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const photoId = req.params.id;
+
+    // 2. (Опционально) Проверяем, является ли пользователь владельцем фото
+    // Сначала получаем данные о фото
+    const { data: photo } = await supabase
+      .from('gallery')
+      .select('user_id')
+      .eq('id', photoId)
+      .single();
+
+    if (!photo) return res.status(404).json({ error: 'Фото не найдено' });
+    
+    // Если id пользователя в токене не совпадает с владельцем фото — запрещаем
+    if (photo.user_id !== decoded.discord_id) {
+      return res.status(403).json({ error: 'Вы не можете удалять чужие фото' });
+    }
+
+    // 3. Удаляем запись из таблицы Supabase
+    const { error } = await supabase
+      .from('gallery')
+      .delete()
+      .eq('id', photoId);
+
+    if (error) throw error;
+
+    res.json({ ok: true });
+  } catch (e) {
+    console.error("Ошибка при удалении фото:", e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
 app.listen(PORT,()=>console.log('NeСкам running on port ' + PORT));
