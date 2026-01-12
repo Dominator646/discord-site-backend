@@ -162,21 +162,31 @@ function renderGallery() {
 
 function triggerUpload() { document.getElementById('photoInput').click(); }
 
-async function uploadPhoto(input) {
-    if (!input.files[0]) return;
+async function uploadPhoto() {
+    const fileInput = document.getElementById('photoInput');
+    if (!fileInput.files[0]) return alert('Выберите файл');
+
     const formData = new FormData();
-    formData.append('photo', input.files[0]);
+    // ПРОВЕРЬ ЭТУ СТРОКУ: имя 'photo' должно совпадать с тем, что в server/index.js
+    formData.append('photo', fileInput.files[0]); 
 
-    // Показываем лоадер
-    document.getElementById('loader').style.display = 'flex';
-
-    await fetch('/api/gallery/upload', {
-        method: 'POST',
-        body: formData
-    });
-
-    showGallery(); // Обновляем
-    document.getElementById('loader').style.display = 'none';
+    try {
+        const r = await fetch('/api/gallery/upload', {
+            method: 'POST',
+            body: formData
+        });
+        const result = await r.json();
+        
+        if (result.ok) {
+            showGallery(); // Обновляем галерею
+        } else {
+            // Если здесь [object Object], выведи ошибку в консоль
+            console.error("Ошибка сервера:", result);
+            alert('Ошибка при загрузке: ' + (result.error || 'неизвестная ошибка'));
+        }
+    } catch (err) {
+        console.error("Ошибка сети:", err);
+    }
 }
 
 function openLightbox(index) {
