@@ -122,3 +122,101 @@ async function saveProfile() {
 }
 
 loadUser();
+
+// Добавь в начало файла переменную для хранения фото
+let galleryImages = [];
+let currentImageIndex = 0;
+
+// Добавь в сайдбар кнопку (в HTML или через JS)
+// <button class="nav-btn" onclick="showGallery()">🖼 Галерея</button>
+
+async function showGallery() {
+    const content = document.getElementById('content');
+    content.innerHTML = '<h1>Галерея</h1><div id="galleryContainer" class="gallery-grid"></div>';
+    
+    // Подгружаем фото
+    const r = await fetch('/api/gallery');
+    galleryImages = await r.json();
+    
+    renderGallery();
+}
+
+function renderGallery() {
+    const container = document.getElementById('galleryContainer');
+    let html = `
+        <div class="gallery-item add-photo-btn" onclick="triggerUpload()">
+            + <span>Добавить фото</span>
+            <input type="file" id="photoInput" hidden accept="image/*" onchange="uploadPhoto(this)">
+        </div>
+    `;
+    
+    galleryImages.forEach((img, index) => {
+        html += `
+            <div class="gallery-item" onclick="openLightbox(${index})">
+                <img src="${img.url}">
+            </div>
+        `;
+    });
+    container.innerHTML = html;
+}
+
+function triggerUpload() { document.getElementById('photoInput').click(); }
+
+async function uploadPhoto(input) {
+    if (!input.files[0]) return;
+    const formData = new FormData();
+    formData.append('photo', input.files[0]);
+
+    // Показываем лоадер
+    document.getElementById('loader').style.display = 'flex';
+
+    await fetch('/api/gallery/upload', {
+        method: 'POST',
+        body: formData
+    });
+
+    showGallery(); // Обновляем
+    document.getElementById('loader').style.display = 'none';
+}
+
+function openLightbox(index) {
+    currentImageIndex = index;
+    const img = galleryImages[index];
+    const isOwner = img.user_id === me.discord_id;
+
+    const div = document.createElement('div');
+    div.id = 'lightbox';
+    div.className = 'lightbox';
+    div.innerHTML = `
+        <div class="lightbox-content">
+            <button class="nav-arrow arrow-left" onclick="changeLightboxImg(-1)">❮</button>
+            <img src="${img.url}">
+            <button class="nav-arrow arrow-right" onclick="changeLightboxImg(1)">❯</button>
+            
+            <div class="lightbox-info">
+                <span class="author">@${img.username}</span>
+                <span class="date">${new Date(img.created_at).toLocaleDateString()}</span>
+                <br>
+                ${isOwner ? `<button class="delete-photo-btn" onclick="deletePhoto('${img.id}')">Удалить</button>` : ''}
+            </div>
+            <button class="btn-close" style="color:white" onclick="document.getElementById('lightbox').remove()">Закрыть</button>
+        </div>
+    `;
+    document.body.appendChild(div);
+}
+
+function changeLightboxImg(step) {
+    currentImageIndex += step;
+    if (currentImageIndex < 0) currentImageIndex = galleryImages.length - 1;
+    if (currentImageIndex >= galleryImages.length) currentImageIndex = 0;
+    
+    document.getElementById('lightbox').remove();
+    openLightbox(currentImageIndex);
+}
+
+async function deletePhoto(id) {
+    if (!confirm('Удалить фото?')) return;
+    await fetch(`/api/gallery/${id}`, { method: 'DELETE' });
+    document.getElementById('lightbox').remove();
+    showGallery();
+}
