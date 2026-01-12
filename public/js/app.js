@@ -233,7 +233,12 @@ function changeLightboxImg(step) {
 
 async function deletePhoto(id) {
     if (!confirm('Удалить фото?')) return;
-    await fetch(`/api/gallery/${id}`, { method: 'DELETE' });
-    document.getElementById('lightbox').remove();
-    showGallery();
+    const r = await fetch(`/api/gallery/${id}`, { method: 'DELETE' });
+    if (r.ok) {
+        // Закрываем лайтбокс и перерисовываем галерею
+        document.getElementById('lightbox').remove();
+        showGallery(); 
+    } else {
+        alert('Ошибка при удалении');
+    }
 }
