@@ -133,4 +133,39 @@ app.post('/api/gallery/upload', upload.single('photo'), async (req, res) => {
   }
 });
 
+app.post('/api/save-profile', async (req, res) => {
+  try {
+    // Проверяем токен пользователя
+    const d = jwt.verify(req.cookies.token, process.env.JWT_SECRET);
+    const { username, avatar, bio } = req.body;
+
+    // Обновляем данные в Supabase
+    const { error } = await supabase
+      .from('users')
+      .update({ username, avatar, bio })
+      .eq('discord_id', d.discord_id);
+
+    if (error) throw error;
+    res.json({ ok: true });
+  } catch (e) {
+    console.error("Ошибка сохранения профиля:", e);
+    res.status(500).json({ error: "Не удалось сохранить профиль" });
+  }
+});
+
+app.get('/api/users', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('discord_id, username, avatar, coins, bio')
+      .order('coins', { ascending: false }); // Сортировка по монетам
+
+    if (error) throw error;
+    res.json(data || []);
+  } catch (e) {
+    console.error("Ошибка загрузки пользователей:", e);
+    res.status(500).json([]);
+  }
+});
+
 app.listen(PORT,()=>console.log('NeСкам running on port ' + PORT));
