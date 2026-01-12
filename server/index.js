@@ -139,27 +139,21 @@ app.post('/api/save-profile', async (req, res) => {
     if (!token) return res.status(401).json({ error: 'Не авторизован' });
 
     const d = jwt.verify(token, process.env.JWT_SECRET);
-    const { username, avatar, bio } = req.body;
+    let { username, avatar, bio } = req.body;
 
-    console.log("Пытаемся сохранить для", d.discord_id, { username, avatar, bio });
+    // Если строка аватара пустая или состоит из пробелов, ставим null
+    if (!avatar || avatar.trim() === '') {
+        avatar = null;
+    }
 
     const { error } = await supabase
       .from('users')
-      .update({ 
-        username: username, 
-        avatar: avatar, 
-        bio: bio 
-      })
+      .update({ username, avatar, bio })
       .eq('discord_id', d.discord_id);
 
-    if (error) {
-      console.error("Ошибка Supabase:", error);
-      return res.status(500).json({ error: error.message });
-    }
-
+    if (error) throw error;
     res.json({ ok: true });
   } catch (e) {
-    console.error("Критическая ошибка сервера:", e);
     res.status(500).json({ error: e.message });
   }
 });
