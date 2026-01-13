@@ -403,3 +403,25 @@ document.addEventListener('click', (e) => {
     }
 });
 
+// Функция, которая решает, какой раздел показать
+function route() {
+    const hash = window.location.hash.replace('#', '');
+    
+    switch(hash) {
+        case 'gallery':
+            showGallery();
+            break;
+        case 'users':
+            showUsers();
+            break;
+        case 'home':
+        default:
+            showHome();
+            break;
+    }
+}
+
+// Вызывай route() вместо showHome() после того, как данные пользователя загружены
+// Например:
+// loadUser().then(() => route());
+
