@@ -154,6 +154,7 @@ let currentImageIndex = 0;
 
 async function showGallery() {
     window.location.hash = 'gallery';
+    
     if (window.galleryInterval) {
         clearInterval(window.galleryInterval);
         window.galleryInterval = null;
@@ -176,6 +177,7 @@ async function showGallery() {
 }
 
 async function loadGalleryData() {
+    window.location.hash = 'gallery';
     const grid = document.getElementById('galleryGrid');
     if (!grid) return;
 
@@ -196,6 +198,7 @@ async function loadGalleryData() {
 }
 
 function renderGallery() {
+    window.location.hash = 'gallery';
     const container = document.getElementById('galleryContainer');
     let html = `
         <div class="gallery-item add-photo-btn" onclick="triggerUpload()">
@@ -304,7 +307,8 @@ async function deletePhoto(id) {
 let galleryInterval = null; // Переменная для хранения таймера
 
 async function showGallery() {
-    // Очищаем старый таймер, если он был
+    window.location.hash = 'gallery';
+    
     if (galleryInterval) clearInterval(galleryInterval);
 
     const content = document.getElementById('content');
