@@ -153,6 +153,7 @@ let currentImageIndex = 0;
 // <button class="nav-btn" onclick="showGallery()">🖼 Галерея</button>
 
 async function showGallery() {
+    window.location.hash = 'gallery';
     if (window.galleryInterval) {
         clearInterval(window.galleryInterval);
         window.galleryInterval = null;
@@ -172,7 +173,6 @@ async function showGallery() {
 
     // Просто загружаем список фото один раз при открытии
     await loadGalleryData();
-    window.location.hash = 'gallery';
 }
 
 async function loadGalleryData() {
