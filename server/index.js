@@ -213,4 +213,19 @@ app.delete('/api/gallery/:id', async (req, res) => {
   }
 });
 
+// Замени res.redirect('/app.html'); на этот код:
+res.send(`
+  <script>
+    if (window.opener) {
+      // Передаем сигнал родителю, что авторизация успешна
+      window.opener.location.href = '/app.html';
+      // Закрываем текущее всплывающее окно
+      window.close();
+    } else {
+      // Если это не попап, просто переходим
+      window.location.href = '/app.html';
+    }
+  </script>
+`);
+
 app.listen(PORT,()=>console.log('NeСкам running on port ' + PORT));
