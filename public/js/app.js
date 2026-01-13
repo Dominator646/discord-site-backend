@@ -10,7 +10,7 @@ async function loadUser() {
         }
         me = await r.json();
         renderTop();
-        showHome();
+        route();
     } catch (err) {
         console.error("Ошибка загрузки:", err);
     } finally {
