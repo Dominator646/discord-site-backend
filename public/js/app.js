@@ -56,6 +56,7 @@ function toggleUserMenu() {
 }
 
 function toggleSidebar() {
+    sidebar.classList.toggle('hidden');
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('sidebarOverlay');
     
