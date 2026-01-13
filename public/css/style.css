@@ -578,5 +578,31 @@ input:focus, textarea:focus {
     transform: translateY(0);
 }
 
+/* Слой затемнения */
+.sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.5); /* Полупрозрачный черный цвет */
+    z-index: 998; /* Чуть ниже, чем у самой панели (у которой должен быть 999) */
+    display: none; /* По умолчанию скрыт */
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+/* Когда панель активна, показываем слой */
+.sidebar-overlay.active {
+    display: block;
+    opacity: 1;
+}
+
+/* Убедись, что у самой панели z-index выше */
+#sidebar {
+    z-index: 999;
+    /* ... твои остальные стили ... */
+}
+
 .btn-primary { flex: 1; background: var(--primary); color: white; }
 .btn-secondary { flex: 1; background: rgba(255,255,255,0.1); color: white; }
