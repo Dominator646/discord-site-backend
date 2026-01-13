@@ -60,7 +60,6 @@ function toggleSidebar() {
 
     const overlay = document.getElementById('sidebarOverlay');
 
-    document.getElementById('userMenu').classList.toggle('active');
     overlay.classList.toggle('active');
 }
 
@@ -68,7 +67,7 @@ function toggleSidebar() {
 document.getElementById('sidebarOverlay').addEventListener('click', () => {
     const overlay = document.getElementById('sidebarOverlay');
 
-    document.getElementById('userMenu').classList.toggle('active');
+    sidebar.classList.toggle('hidden');
     overlay.classList.remove('active');
 });
 
