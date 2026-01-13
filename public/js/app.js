@@ -72,7 +72,7 @@ function showHome() {
 async function showUsers() {
     const content = document.getElementById('content');
     content.innerHTML = '<div class="spinner"></div>';
-    window.location.hash = 'home';
+    window.location.hash = 'users';
     
     try {
         const r = await fetch('/api/users');
@@ -153,8 +153,6 @@ let currentImageIndex = 0;
 // <button class="nav-btn" onclick="showGallery()">🖼 Галерея</button>
 
 async function showGallery() {
-    // Останавливаем все таймеры, если они остались от прошлых попыток
-    window.location.hash = 'home';
     if (window.galleryInterval) {
         clearInterval(window.galleryInterval);
         window.galleryInterval = null;
@@ -174,6 +172,7 @@ async function showGallery() {
 
     // Просто загружаем список фото один раз при открытии
     await loadGalleryData();
+    window.location.hash = 'gallery';
 }
 
 async function loadGalleryData() {
