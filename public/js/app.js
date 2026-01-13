@@ -388,3 +388,15 @@ function login() {
         `width=${width},height=${height},top=${top},left=${left}`);
 }
 
+document.addEventListener('click', (e) => {
+    const sidebar = document.getElementById('sidebar');
+    const menuBtn = document.querySelector('.menu-btn'); // Кнопка, которая открывает меню
+
+    // Если панель активна И клик был НЕ по панели И НЕ по кнопке меню
+    if (sidebar.classList.contains('active')) {
+        if (!sidebar.contains(e.target) && !menuBtn.contains(e.target)) {
+            sidebar.classList.remove('active');
+        }
+    }
+});
+
