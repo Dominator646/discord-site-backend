@@ -151,14 +151,46 @@ let currentImageIndex = 0;
 // <button class="nav-btn" onclick="showGallery()">🖼 Галерея</button>
 
 async function showGallery() {
+    // Останавливаем все таймеры, если они остались от прошлых попыток
+    if (window.galleryInterval) {
+        clearInterval(window.galleryInterval);
+        window.galleryInterval = null;
+    }
+
     const content = document.getElementById('content');
-    content.innerHTML = '<h1>Галерея</h1><div id="galleryContainer" class="gallery-grid"></div>';
-    
-    // Подгружаем фото
-    const r = await fetch('/api/gallery');
-    galleryImages = await r.json();
-    
-    renderGallery();
+    content.innerHTML = `
+        <div class="gallery-header">
+            <h1>Галерея событий</h1>
+            <label class="upload-btn">
+                <input type="file" id="photoInput" accept="image/*" onchange="uploadPhoto()" style="display:none">
+                📸 Загрузить фото
+            </label>
+        </div>
+        <div id="galleryGrid" class="gallery-grid"></div>
+    `;
+
+    // Просто загружаем список фото один раз при открытии
+    await loadGalleryData();
+}
+
+async function loadGalleryData() {
+    const grid = document.getElementById('galleryGrid');
+    if (!grid) return;
+
+    try {
+        const r = await fetch('/api/gallery');
+        const images = await r.json();
+        galleryImages = images;
+
+        grid.innerHTML = images.map((img, index) => `
+            <div class="gallery-item" onclick="openLightbox(${index})">
+                <img src="${img.url}" loading="lazy">
+                <div class="item-info">@${img.username}</div>
+            </div>
+        `).join('');
+    } catch (err) {
+        console.error("Ошибка загрузки галереи:", err);
+    }
 }
 
 function renderGallery() {
@@ -184,28 +216,32 @@ function triggerUpload() { document.getElementById('photoInput').click(); }
 
 async function uploadPhoto() {
     const fileInput = document.getElementById('photoInput');
-    if (!fileInput.files[0]) return alert('Выберите файл');
+    if (!fileInput.files[0]) return;
 
     const formData = new FormData();
-    // ПРОВЕРЬ ЭТУ СТРОКУ: имя 'photo' должно совпадать с тем, что в server/index.js
-    formData.append('photo', fileInput.files[0]); 
+    formData.append('photo', fileInput.files[0]);
+
+    // Показываем, что загрузка пошла (опционально)
+    const btn = document.querySelector('.upload-btn');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = "⏳ Загрузка...";
 
     try {
         const r = await fetch('/api/gallery/upload', {
             method: 'POST',
             body: formData
         });
-        const result = await r.json();
-        
-        if (result.ok) {
-            showGallery(); // Обновляем галерею
+
+        if (r.ok) {
+            await loadGalleryData(); // Обновляем список фото сразу после загрузки
         } else {
-            // Если здесь [object Object], выведи ошибку в консоль
-            console.error("Ошибка сервера:", result);
-            alert('Ошибка при загрузке: ' + (result.error || 'неизвестная ошибка'));
+            alert('Ошибка при загрузке фото');
         }
     } catch (err) {
-        console.error("Ошибка сети:", err);
+        alert('Ошибка сети');
+    } finally {
+        btn.innerHTML = originalText;
+        fileInput.value = ''; // Сбрасываем инпут
     }
 }
 
