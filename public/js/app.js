@@ -378,3 +378,13 @@ async function uploadPhoto() {
     }
 }
 
+function login() {
+    const width = 500, height = 750;
+    const left = (screen.width / 2) - (width / 2);
+    const top = (screen.height / 2) - (height / 2);
+    
+    // Открываем окно по центру
+    window.open('/auth/discord', 'Discord Auth', 
+        `width=${width},height=${height},top=${top},left=${left}`);
+}
+
