@@ -540,5 +540,43 @@ input:focus, textarea:focus {
     color: white;
 }
 
+/* Контейнер для кнопки */
+.gallery-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.05); /* Легкая подложка для шапки */
+    border-radius: 12px;
+    margin-bottom: 20px;
+}
+
+/* Сама кнопка-лейбл */
+.upload-btn {
+    background-color: #5865F2; /* Цвет Discord */
+    color: white;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer; /* Курсор-ручка */
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 4px 15px rgba(88, 101, 242, 0.3);
+}
+
+/* Эффект при наведении */
+.upload-btn:hover {
+    background-color: #4752C4;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(88, 101, 242, 0.4);
+}
+
+/* Эффект при нажатии */
+.upload-btn:active {
+    transform: translateY(0);
+}
+
 .btn-primary { flex: 1; background: var(--primary); color: white; }
 .btn-secondary { flex: 1; background: rgba(255,255,255,0.1); color: white; }
