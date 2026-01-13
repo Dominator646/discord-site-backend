@@ -57,15 +57,18 @@ function toggleUserMenu() {
 
 function toggleSidebar() {
     sidebar.classList.toggle('hidden');
+
+    const overlay = document.getElementById('sidebarOverlay');
+
+    document.getElementById('userMenu').classList.toggle('active');
+    overlay.classList.toggle('active');
 }
 
 // Добавляем обработчик клика по самому слою затемнения
 document.getElementById('sidebarOverlay').addEventListener('click', () => {
-    const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('sidebarOverlay');
-    
-    // При клике на пустую область просто всё убираем
-    sidebar.classList.remove('active');
+
+    document.getElementById('userMenu').classList.toggle('active');
     overlay.classList.remove('active');
 });
 
