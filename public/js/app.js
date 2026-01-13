@@ -61,6 +61,7 @@ function toggleSidebar() {
 
 // Вкладка: Главная
 function showHome() {
+    window.location.hash = 'home';
     document.getElementById('content').innerHTML = `
         <h1>NeСкам</h1>
         <p>Сайт для вечерних просмотров и выбора случайных фильмов в кругу близких друзей.</p>
@@ -71,6 +72,7 @@ function showHome() {
 async function showUsers() {
     const content = document.getElementById('content');
     content.innerHTML = '<div class="spinner"></div>';
+    window.location.hash = 'home';
     
     try {
         const r = await fetch('/api/users');
@@ -152,6 +154,7 @@ let currentImageIndex = 0;
 
 async function showGallery() {
     // Останавливаем все таймеры, если они остались от прошлых попыток
+    window.location.hash = 'home';
     if (window.galleryInterval) {
         clearInterval(window.galleryInterval);
         window.galleryInterval = null;
