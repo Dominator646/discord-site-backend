@@ -56,8 +56,23 @@ function toggleUserMenu() {
 }
 
 function toggleSidebar() {
-    document.getElementById('sidebar').classList.toggle('hidden');
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    
+    // Переключаем класс active у панели и у слоя затемнения
+    sidebar.classList.toggle('active');
+    overlay.classList.toggle('active');
 }
+
+// Добавляем обработчик клика по самому слою затемнения
+document.getElementById('sidebarOverlay').addEventListener('click', () => {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    
+    // При клике на пустую область просто всё убираем
+    sidebar.classList.remove('active');
+    overlay.classList.remove('active');
+});
 
 // Вкладка: Главная
 function showHome() {
