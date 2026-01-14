@@ -599,5 +599,111 @@ input:focus, textarea:focus {
 }
 
 
+/* --- СТАТУС ОНЛАЙН (ТОЧКА) --- */
+.status-dot {
+    position: absolute;
+    bottom: 15px; /* Заезд на аватарку */
+    right: 5px;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    border: 3px solid var(--bg-card); /* Обводка под цвет фона карточки */
+    z-index: 10;
+}
+
+.status-online { background-color: #23a559; box-shadow: 0 0 10px #23a559; }
+.status-offline { background-color: #80848e; }
+
+/* --- АДМИН ПАНЕЛЬ --- */
+.admin-link {
+    color: #ff4d4d !important; /* Красный цвет для кнопки админки */
+    border: 1px solid rgba(255, 77, 77, 0.2) !important;
+}
+
+.admin-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    padding-bottom: 10px;
+}
+
+.tab-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    padding: 10px 20px;
+    cursor: pointer;
+    font-size: 16px;
+    border-radius: 8px;
+}
+
+.tab-btn.active {
+    background: var(--primary);
+    color: white;
+}
+
+.admin-section h3 {
+    margin-top: 30px;
+    color: var(--text-muted);
+    font-size: 14px;
+    text-transform: uppercase;
+}
+
+.row {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+/* Список юзеров в админке */
+.admin-users-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.admin-user-row {
+    display: flex;
+    align-items: center;
+    background: rgba(255,255,255,0.03);
+    padding: 10px;
+    border-radius: 10px;
+    justify-content: space-between;
+}
+
+.tiny-avatar {
+    width: 40px !important;
+    height: 40px !important;
+    margin: 0 !important;
+    border: none !important;
+}
+
+.info {
+    flex: 1;
+    margin-left: 15px;
+    text-align: left;
+}
+
+.actions {
+    display: flex;
+    gap: 5px;
+}
+
+.actions button {
+    padding: 5px 10px;
+    font-size: 12px;
+    border-radius: 5px;
+    border: 1px solid rgba(255,255,255,0.2);
+    background: transparent;
+    color: white;
+    cursor: pointer;
+}
+
+.actions button:hover {
+    background: var(--primary);
+}
+
+
 .btn-primary { flex: 1; background: var(--primary); color: white; }
 .btn-secondary { flex: 1; background: rgba(255,255,255,0.1); color: white; }
