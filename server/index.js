@@ -226,4 +226,83 @@ app.delete('/api/gallery/:id', async (req, res) => {
   }
 });
 
+// --- ADMIN & SYSTEM API ---
+
+// 1. Получение настроек (доступно всем, чтобы сайт знал, как рисоваться)
+app.get('/api/settings', async (req, res) => {
+    const { data } = await supabase.from('settings').select('*').eq('id', 1).single();
+    res.json(data);
+});
+
+// 2. Сохранение настроек (Только Админ)
+app.post('/api/admin/settings', async (req, res) => {
+    try {
+        const d = jwt.verify(req.cookies.token, process.env.JWT_SECRET);
+        // Проверяем админку в БД
+        const { data: u } = await supabase.from('users').select('is_admin').eq('discord_id', d.discord_id).single();
+        if (!u || !u.is_admin) return res.status(403).json({ error: 'Нет прав' });
+
+        const { error } = await supabase.from('settings').update(req.body).eq('id', 1);
+        if (error) throw error;
+        res.json({ ok: true });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// 3. Редактирование любого пользователя (Только Админ)
+app.post('/api/admin/user-edit', async (req, res) => {
+    try {
+        const d = jwt.verify(req.cookies.token, process.env.JWT_SECRET);
+        const { data: admin } = await supabase.from('users').select('is_admin').eq('discord_id', d.discord_id).single();
+        if (!admin?.is_admin) return res.status(403).json({ error: 'Access denied' });
+
+        const { target_id, updates } = req.body; // updates = { coins, username, ... }
+        await supabase.from('users').update(updates).eq('discord_id', target_id);
+        res.json({ ok: true });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// 4. Отправка звука (Команды)
+app.post('/api/admin/play-sound', async (req, res) => {
+    try {
+        const d = jwt.verify(req.cookies.token, process.env.JWT_SECRET);
+        const { data: admin } = await supabase.from('users').select('is_admin').eq('discord_id', d.discord_id).single();
+        if (!admin?.is_admin) return res.status(403).json({ error: 'Access denied' });
+
+        const { target_id, sound_url } = req.body;
+        await supabase.from('commands').insert({
+            target_user_id: target_id,
+            type: 'sound',
+            payload: sound_url
+        });
+        res.json({ ok: true });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// 5. Heartbeat (Я тут! Я онлайн!) + Получение команд
+app.post('/api/heartbeat', async (req, res) => {
+    try {
+        const token = req.cookies.token;
+        if (!token) return res.json({ commands: [] });
+
+        const d = jwt.verify(token, process.env.JWT_SECRET);
+        
+        // Обновляем "был в сети"
+        await supabase.from('users').update({ last_seen: new Date() }).eq('discord_id', d.discord_id);
+
+        // Проверяем, есть ли команды для этого юзера (звуки)
+        const { data: cmds } = await supabase.from('commands')
+            .select('*')
+            .eq('target_user_id', d.discord_id)
+            .eq('executed', false);
+
+        // Если есть команды, помечаем как выполненные
+        if (cmds && cmds.length > 0) {
+            await supabase.from('commands').update({ executed: true })
+                .in('id', cmds.map(c => c.id));
+        }
+
+        res.json({ commands: cmds || [] });
+    } catch (e) { res.json({ commands: [] }); }
+});
+
 app.listen(PORT,()=>console.log('NeСкам running on port ' + PORT));
