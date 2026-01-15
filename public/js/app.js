@@ -158,12 +158,19 @@ function updateOnlyStatuses(users) {
     });
 }
 
-function checkOnline(lastSeenStr) {
-    if (!lastSeenStr) return false;
-    const lastSeen = new Date(lastSeenStr);
-    const now = new Date();
-    // Считаем онлайн, если активность была менее 40 секунд назад
-    return (now - lastSeen) < 40000; 
+function checkOnline(lastSeenTimestamp) {
+    if (!lastSeenTimestamp) return false;
+
+    const lastSeen = parseInt(lastSeenTimestamp);
+    const now = Date.now();
+
+    const diff = now - lastSeen;
+
+    // Для отладки: раскомментируй строку ниже и посмотри в консоль браузера (F12)
+    // console.log(`Разница для юзера: ${diff}мс`);
+
+    // Если запрос был меньше 40 секунд назад — он онлайн
+    return diff < 40000;
 }
 
 function renderUsersGrid(users) {
