@@ -799,6 +799,28 @@ input:focus, textarea:focus {
     color: white;
 }
 
+.status-dot {
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background-color: #80848e; /* По умолчанию серый */
+    border: 3px solid var(--bg-card);
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.status-dot.online {
+    background-color: #23a559; /* Зеленый */
+    box-shadow: 0 0 8px rgba(35, 165, 89, 0.5);
+}
+
+.avatar-container {
+    position: relative;
+    display: inline-block;
+}
+
 .btn-sound-mini:hover { background: #4752C4; }
 .btn-save-mini:hover { background: #1a8344; }
 
