@@ -601,14 +601,11 @@ input:focus, textarea:focus {
 
 /* --- СТАТУС ОНЛАЙН (ТОЧКА) --- */
 .status-dot {
-    position: absolute;
-    bottom: 15px; /* Заезд на аватарку */
-    right: 5px;
-    width: 15px;
-    height: 15px;
+    width: 14px;
+    height: 14px;
     border-radius: 50%;
-    border: 3px solid var(--bg-card); /* Обводка под цвет фона карточки */
-    z-index: 10;
+    background-color: #4b4d52 !important; /* Цвет оффлайна */
+    border: 3px solid #14172b;
 }
 
 .status-online { background-color: #23a559; box-shadow: 0 0 10px #23a559; }
@@ -812,8 +809,8 @@ input:focus, textarea:focus {
 }
 
 .status-dot.online {
-    background-color: #23a559; /* Зеленый */
-    box-shadow: 0 0 8px rgba(35, 165, 89, 0.5);
+    background-color: #23a559 !important; /* Принудительно зеленый */
+    box-shadow: 0 0 10px rgba(35, 165, 89, 0.5);
 }
 
 .avatar-container {
