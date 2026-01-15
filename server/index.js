@@ -305,4 +305,39 @@ app.post('/api/heartbeat', async (req, res) => {
     } catch (e) { res.json({ commands: [] }); }
 });
 
+// Загрузка звукового файла и создание команды (Только Админ)
+app.post('/api/admin/upload-sound', upload.single('sound'), async (req, res) => {
+    try {
+        const d = jwt.verify(req.cookies.token, process.env.JWT_SECRET);
+        const { data: admin } = await supabase.from('users').select('is_admin').eq('discord_id', d.discord_id).single();
+        if (!admin?.is_admin) return res.status(403).json({ error: 'Нет прав' });
+
+        if (!req.file) return res.status(400).json({ error: 'Файл не выбран' });
+
+        const fileName = `sound-${Date.now()}-${req.file.originalname}`;
+        const targetId = req.body.target_id;
+
+        // 1. Загружаем в Storage "sounds"
+        const { error: storageError } = await supabase.storage
+            .from('sounds')
+            .upload(fileName, req.file.buffer, { contentType: req.file.mimetype });
+
+        if (storageError) throw storageError;
+
+        // 2. Получаем ссылку
+        const { data: { publicUrl } } = supabase.storage.from('sounds').getPublicUrl(fileName);
+
+        // 3. Создаем команду для юзера
+        await supabase.from('commands').insert({
+            target_user_id: targetId,
+            type: 'sound',
+            payload: publicUrl
+        });
+
+        res.json({ ok: true });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
 app.listen(PORT,()=>console.log('NeСкам running on port ' + PORT));
