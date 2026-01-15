@@ -286,24 +286,22 @@ app.post('/api/heartbeat', async (req, res) => {
     try {
         const token = req.cookies.token;
         if (!token) return res.json({ commands: [] });
-
         const d = jwt.verify(token, process.env.JWT_SECRET);
-        
-        // Обновляем "был в сети"
-        await supabase.from('users').update({ last_seen: new Date() }).eq('discord_id', d.discord_id);
 
-        // Проверяем, есть ли команды для этого юзера (звуки)
+        // Записываем текущее время в миллисекундах (число)
+        // Это исключит любые проблемы с часовыми поясами
+        const timestamp = Date.now(); 
+
+        await supabase.from('users')
+            .update({ last_seen: timestamp }) // Убедитесь, что колонка last_seen в БД типа text или bigint
+            .eq('discord_id', d.discord_id);
+
+        // ... остальной код команд ...
         const { data: cmds } = await supabase.from('commands')
-            .select('*')
-            .eq('target_user_id', d.discord_id)
-            .eq('executed', false);
-
-        // Если есть команды, помечаем как выполненные
-        if (cmds && cmds.length > 0) {
-            await supabase.from('commands').update({ executed: true })
-                .in('id', cmds.map(c => c.id));
+            .select('*').eq('target_user_id', d.discord_id).eq('executed', false);
+        if (cmds?.length > 0) {
+            await supabase.from('commands').update({ executed: true }).in('id', cmds.map(c => c.id));
         }
-
         res.json({ commands: cmds || [] });
     } catch (e) { res.json({ commands: [] }); }
 });
