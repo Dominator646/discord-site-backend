@@ -604,27 +604,92 @@ async function saveSiteSettings() {
 
 async function loadAdminUsersList() {
     const container = document.getElementById('tab-users');
-    const r = await fetch('/api/users'); // Используем существующий API
+    const r = await fetch('/api/users');
     const users = await r.json();
 
-    let html = '<div class="admin-users-list">';
-    users.forEach(u => {
-        html += `
-            <div class="admin-user-row">
-                <img src="${getAvatar(u)}" class="tiny-avatar">
-                <div class="info">
-                    <strong>${u.username}</strong>
-                    <span class="coins">💰 ${u.coins}</span>
+    container.innerHTML = `
+        <div class="admin-edit-grid">
+            ${users.map(u => `
+                <div class="admin-user-card" id="admin-card-${u.discord_id}">
+                    <div class="card-header">
+                        <img src="${getAvatar(u)}" class="admin-avatar">
+                        <div class="card-title">
+                            <input type="text" value="${u.username}" id="edit-name-${u.discord_id}" placeholder="Никнейм">
+                            <span class="id-badge">${u.discord_id}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="card-body">
+                        <div class="input-field">
+                            <label>💰 Монеты</label>
+                            <input type="number" value="${u.coins}" id="edit-coins-${u.discord_id}">
+                        </div>
+                        <div class="input-field">
+                            <label>📝 Описание</label>
+                            <textarea id="edit-bio-${u.discord_id}">${u.bio || ''}</textarea>
+                        </div>
+                        <div class="input-field">
+                            <label>🖼 Ссылка на аватар</label>
+                            <input type="text" value="${u.avatar || ''}" id="edit-avatar-${u.discord_id}">
+                        </div>
+                    </div>
+
+                    <div class="card-footer">
+                        <button class="btn-save-mini" onclick="saveUserByAdmin('${u.discord_id}')">✅ Сохранить</button>
+                        
+                        <label class="btn-sound-mini">
+                            <input type="file" hidden accept="audio/*" onchange="uploadAdminSound(this, '${u.discord_id}')">
+                            🔊 Звук
+                        </label>
+                    </div>
                 </div>
-                <div class="actions">
-                    <button onclick="adminEditUser('${u.discord_id}', '${u.username}', ${u.coins})">✏️ Ред.</button>
-                    <button onclick="adminPlaySound('${u.discord_id}')">🔊 Звук</button>
-                </div>
-            </div>
-        `;
+            `).join('')}
+        </div>
+    `;
+}
+
+// Сохранение данных пользователя админом
+async function saveUserByAdmin(id) {
+    const updates = {
+        username: document.getElementById(`edit-name-${id}`).value,
+        coins: parseInt(document.getElementById(`edit-coins-${id}`).value),
+        bio: document.getElementById(`edit-bio-${id}`).value,
+        avatar: document.getElementById(`edit-avatar-${id}`).value
+    };
+
+    const r = await fetch('/api/admin/user-edit', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ target_id: id, updates })
     });
-    html += '</div>';
-    container.innerHTML = html;
+
+    if (r.ok) {
+        alert('Данные пользователя обновлены!');
+    }
+}
+
+// Загрузка звукового файла
+async function uploadAdminSound(input, targetId) {
+    if (!input.files[0]) return;
+    
+    const formData = new FormData();
+    formData.append('sound', input.files[0]);
+    formData.append('target_id', targetId);
+
+    const btn = input.parentElement;
+    btn.innerHTML = "⌛..."; // Индикация загрузки
+
+    const r = await fetch('/api/admin/upload-sound', {
+        method: 'POST',
+        body: formData
+    });
+
+    if (r.ok) {
+        alert('Звук отправлен пользователю!');
+    } else {
+        alert('Ошибка при загрузке звука');
+    }
+    loadAdminUsersList(); // Перерисовать, чтобы вернуть кнопку
 }
 
 async function adminEditUser(id, oldName, oldCoins) {
