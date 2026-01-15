@@ -113,41 +113,15 @@ function showHome() {
 
 // Вкладка: Пользователи (Исправлено!)
 async function showUsers() {
-    const content = document.getElementById('content');
-    content.innerHTML = '<div class="spinner"></div>';
     window.location.hash = 'users';
+    const content = document.getElementById('content');
     
-    try {
-        const r = await fetch('/api/users');
-        const users = await r.json(); // Теперь users содержит last_seen
-        
-        let html = '<h1>Пользователи</h1><div class="users-grid">';
-        users.forEach(u => {
-            // Проверка онлайна: если last_seen был меньше 2 минут назад
-            const lastSeen = new Date(u.last_seen || 0);
-            const now = new Date();
-            const diffSeconds = (now - lastSeen) / 1000;
-            const isOnline = diffSeconds < 120; // 2 минуты таймаут
-            
-            const statusClass = isOnline ? 'status-online' : 'status-offline';
-
-            html += `
-                <div class="user-card">
-                    <div class="avatar-container" style="position:relative; display:inline-block;">
-                        <img src="${getAvatar(u)}">
-                        <div class="status-dot ${statusClass}"></div>
-                    </div>
-                    <h3>${u.username}</h3>
-                    <p>${u.bio || '<i>Нет описания</i>'}</p>
-                    <div class="coins-badge" style="margin-top:10px; display:inline-block;">💰 ${u.coins || 0}</div>
-                </div>
-            `;
-        });
-        html += '</div>';
-        content.innerHTML = html;
-    } catch (e) {
-        content.innerHTML = '<p>Ошибка при загрузке пользователей.</p>';
+    // Показываем лоадер ТОЛЬКО если контент пустой (первый заход)
+    if (!content.innerHTML || content.innerHTML.includes('spinner')) {
+        content.innerHTML = '<div class="spinner"></div>';
     }
+    
+    await refreshUsersData(true); // true означает "полная перерисовка"
 }
 
 // Легкая функция для обновления только статусов без перезагрузки списка
@@ -157,6 +131,60 @@ async function refreshUserStatuses() {
     // Для простоты пока оставим так: статус обновится при следующем входе, 
     // но если хочешь реалтайм прямо на глазах:
     showUsers(); 
+}
+
+async function refreshUsersData(fullRender = false) {
+    try {
+        const r = await fetch('/api/users');
+        const users = await r.json();
+
+        if (fullRender) {
+            renderUsersGrid(users);
+        } else {
+            updateOnlyStatuses(users);
+        }
+    } catch (e) { console.error("Ошибка обновления юзеров", e); }
+}
+
+function updateOnlyStatuses(users) {
+    users.forEach(u => {
+        const card = document.querySelector(`.user-card[data-id="${u.discord_id}"]`);
+        if (card) {
+            const dot = card.querySelector('.status-dot');
+            const isOnline = checkOnline(u.last_seen);
+            if (isOnline) dot.classList.add('online');
+            else dot.classList.remove('online');
+        }
+    });
+}
+
+function checkOnline(lastSeenStr) {
+    if (!lastSeenStr) return false;
+    const lastSeen = new Date(lastSeenStr);
+    const now = new Date();
+    // Считаем онлайн, если активность была менее 40 секунд назад
+    return (now - lastSeen) < 40000; 
+}
+
+function renderUsersGrid(users) {
+    const content = document.getElementById('content');
+    let html = '<h1>Пользователи</h1><div class="users-grid" id="usersGrid">';
+    
+    users.forEach(u => {
+        const isOnline = checkOnline(u.last_seen);
+        html += `
+            <div class="user-card" data-id="${u.discord_id}">
+                <div class="avatar-container">
+                    <img src="${getAvatar(u)}">
+                    <div class="status-dot ${isOnline ? 'online' : ''}"></div>
+                </div>
+                <h3>${u.username}</h3>
+                <p>${u.bio || '<i>Нет описания</i>'}</p>
+                <div class="coins-badge">💰 ${u.coins || 0}</div>
+            </div>`;
+    });
+    html += '</div>';
+    content.innerHTML = html;
 }
 
 // Работа с профилем
@@ -722,32 +750,23 @@ async function adminPlaySound(id) {
 }
 
 function startHeartbeat() {
-    if (heartbeatInterval) clearInterval(heartbeatInterval);
-    
-    // Каждые 5 секунд говорим серверу "Я тут" и спрашиваем "Есть че?"
-    heartbeatInterval = setInterval(async () => {
-        try {
-            const r = await fetch('/api/heartbeat', { method: 'POST' });
-            const data = await r.json();
+    if (window.heartbeatActive) return;
+    window.heartbeatActive = true;
 
-            // Проигрывание звуков
-            if (data.commands && data.commands.length > 0) {
-                data.commands.forEach(cmd => {
-                    if (cmd.type === 'sound') {
-                        const audio = new Audio(cmd.payload);
-                        audio.play().catch(e => console.log('Autoplay blocked:', e));
-                        alert('🔊 Вам проигрывают звук!'); // Чтобы юзер кликнул и звук пошел, если браузер блокирует
-                    }
-                });
-            }
-            
-            // Если мы сейчас в разделе "Пользователи", обновляем их статус (точки)
-            if (window.location.hash === '#users') {
-                refreshUserStatuses();
-            }
+    setInterval(async () => {
+        const r = await fetch('/api/heartbeat', { method: 'POST' });
+        const data = await r.json();
 
-        } catch (e) { console.error('Heartbeat error', e); }
-    }, 5000);
+        // Обработка звуков (как была раньше)
+        if (data.commands?.length > 0) {
+            data.commands.forEach(c => new Audio(c.payload).play());
+        }
+
+        // Если мы в разделе пользователей, обновляем только статусы (без лоадера!)
+        if (window.location.hash === '#users') {
+            refreshUsersData(false); 
+        }
+    }, 20000); // 20 секунд
 }
 
 // Вызывай route() вместо showHome() после того, как данные пользователя загружены
