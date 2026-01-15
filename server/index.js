@@ -173,15 +173,18 @@ app.post('/api/save-profile', async (req, res) => {
 
 app.get('/api/users', async (req, res) => {
   try {
+    // 1. Сначала удаляем из базы тех, у кого нет никнейма (пустые аккаунты)
+    await supabase.from('users').delete().is('username', null);
+
+    // 2. Получаем список живых пользователей
     const { data, error } = await supabase
       .from('users')
-      .select('discord_id, username, avatar, coins, bio')
-      .order('coins', { ascending: false }); // Сортировка по монетам
+      .select('*')
+      .order('coins', { ascending: false });
 
     if (error) throw error;
     res.json(data || []);
   } catch (e) {
-    console.error("Ошибка загрузки пользователей:", e);
     res.status(500).json([]);
   }
 });
