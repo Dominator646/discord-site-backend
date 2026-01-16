@@ -1,6 +1,15 @@
 let me = null;
 let siteSettings = {}; // Сюда загрузим настройки
 let heartbeatInterval = null;
+let wheelCanvas = null;
+let wheelCtx = null;
+let wheelItems = [];
+let wheelState = {};
+let currentAngle = 0;
+let animationFrameId = null;
+let startTime = null;
+let startRotation = 0;
+let finalRotation = 0;
 
 // Загрузка данных при входе
 async function loadUser() {
@@ -775,6 +784,339 @@ function startHeartbeat() {
         }
     }, 20000); // 20 секунд
 }
+
+async function showWheel() {
+    window.location.hash = 'wheel';
+    localStorage.setItem('lastPage', 'wheel');
+    const content = document.getElementById('content');
+
+    // Структура страницы (Layout PointAuc)
+    content.innerHTML = `
+        <div class="wheel-container">
+            <div class="wheel-stats">
+                <h3>Шансы</h3>
+                <div id="chanceList" class="chance-list"></div>
+            </div>
+
+            <div class="wheel-wrapper">
+                <div class="wheel-pointer-value" id="currentWinnerLabel">???</div>
+                <div class="wheel-pointer">▼</div>
+                <canvas id="wheelCanvas" width="600" height="600"></canvas>
+                <div class="wheel-center-btn" onclick="uploadCenterImage()">
+                    <img id="centerImageDisplay" src="">
+                    <input type="file" id="centerInput" hidden accept="image/*" onchange="sendCenterImage(this)">
+                </div>
+            </div>
+
+            <div class="wheel-controls" id="adminControls" style="display:none">
+                <h3>Управление</h3>
+                <div class="control-group">
+                    <label>Время (мс)</label>
+                    <input type="number" id="spinTime" value="5000" onchange="updateSettings()">
+                </div>
+                <div class="control-group">
+                    <label>Режим</label>
+                    <select id="spinMode" onchange="updateSettings()">
+                        <option value="normal">Обычный</option>
+                        <option value="elimination">На выбывание</option>
+                    </select>
+                </div>
+                <button class="spin-btn" onclick="spinTheWheel()">КРУТИТЬ!</button>
+            </div>
+        </div>
+
+        <div class="wheel-options-panel">
+            <div class="options-header">
+                <h2>Варианты</h2>
+                <div class="add-option-form">
+                    <input type="text" id="newOptionLabel" placeholder="Название варианта">
+                    <button onclick="addWheelOption()">Добавить</button>
+                </div>
+            </div>
+            <div id="optionsGrid" class="options-grid"></div>
+        </div>
+    `;
+
+    // Инициализация Canvas
+    wheelCanvas = document.getElementById('wheelCanvas');
+    wheelCtx = wheelCanvas.getContext('2d');
+
+    // Загрузка данных
+    await loadWheelData();
+    
+    // Подписка на Realtime
+    subscribeToWheel();
+}
+
+async function loadWheelData() {
+    const r = await fetch('/api/wheel/state');
+    const data = await r.json();
+    wheelItems = data.items;
+    wheelState = data.state;
+
+    // Настраиваем интерфейс
+    if (me.is_admin) {
+        document.getElementById('adminControls').style.display = 'block';
+        document.getElementById('spinTime').value = wheelState.spin_duration;
+        document.getElementById('spinMode').value = wheelState.mode;
+    }
+
+    // Центральная картинка
+    if (wheelState.center_image) {
+        document.getElementById('centerImageDisplay').src = wheelState.center_image;
+        document.getElementById('centerImageDisplay').style.display = 'block';
+    }
+
+    // Если колесо крутится или уже прокручено, ставим угол
+    if (!wheelState.is_spinning) {
+        currentAngle = wheelState.target_rotation % 360; 
+        // Или полностью wheelState.current_rotation, если хотим хранить историю оборотов
+        currentAngle = wheelState.target_rotation; 
+    } else {
+        // Если зашли во время вращения — начинаем анимацию
+        animateSpin(); 
+    }
+
+    renderWheelList();
+    renderChances();
+    drawWheel();
+}
+
+// Отрисовка самого колеса (Canvas)
+function drawWheel() {
+    if (!wheelCtx) return;
+    const ctx = wheelCtx;
+    const W = wheelCanvas.width;
+    const H = wheelCanvas.height;
+    const CX = W / 2;
+    const CY = H / 2;
+    const R = W / 2 - 20; // Радиус
+
+    ctx.clearRect(0, 0, W, H);
+
+    // Фильтруем выбывших, если режим elimination (но в базе они есть)
+    // В режиме выбывания они просто серые или скрытые? Обычно скрытые.
+    // Но если "можно вернуть", значит они есть в списке внизу.
+    // В колесе рисуем только активных.
+    const activeItems = wheelItems.filter(i => !i.is_eliminated);
+    const totalWeight = activeItems.reduce((sum, i) => sum + i.weight, 0);
+
+    if (totalWeight === 0) return;
+
+    let startAngle = (currentAngle * Math.PI) / 180; // Переводим градусы в радианы
+
+    // Рисуем сектора
+    activeItems.forEach(item => {
+        const sliceAngle = (item.weight / totalWeight) * 2 * Math.PI;
+        
+        ctx.beginPath();
+        ctx.moveTo(CX, CY);
+        ctx.arc(CX, CY, R, startAngle, startAngle + sliceAngle);
+        ctx.closePath();
+        
+        ctx.fillStyle = item.color;
+        ctx.fill();
+        ctx.stroke();
+
+        // Текст
+        ctx.save();
+        ctx.translate(CX, CY);
+        ctx.rotate(startAngle + sliceAngle / 2);
+        ctx.textAlign = "right";
+        ctx.fillStyle = "#fff";
+        ctx.font = "bold 18px Arial";
+        ctx.shadowColor = "black";
+        ctx.shadowBlur = 4;
+        ctx.fillText(item.label, R - 20, 5);
+        ctx.restore();
+
+        startAngle += sliceAngle;
+    });
+
+    // Определяем, кто сейчас под стрелкой (270 градусов / -90)
+    // Нормализуем текущий угол
+    updateCurrentWinnerLabel(activeItems, totalWeight);
+}
+
+function updateCurrentWinnerLabel(activeItems, totalWeight) {
+    // Сложная математика для определения сектора под стрелкой
+    const pointerAngle = (270 - (currentAngle % 360) + 360) % 360;
+    
+    let accumulated = 0;
+    let found = null;
+
+    for (let item of activeItems) {
+        const sliceDegrees = (item.weight / totalWeight) * 360;
+        if (pointerAngle >= accumulated && pointerAngle < accumulated + sliceDegrees) {
+            found = item;
+            break;
+        }
+        accumulated += sliceDegrees;
+    }
+
+    if (found) {
+        document.getElementById('currentWinnerLabel').innerText = found.label;
+        document.getElementById('currentWinnerLabel').style.color = found.color;
+    }
+}
+
+function animateSpin(timestamp) {
+    if (!startTime) startTime = timestamp;
+    const progress = timestamp - startTime;
+    const duration = wheelState.spin_duration;
+
+    if (progress < duration) {
+        // Easing function (easeOutQuart) для плавного замедления
+        const t = progress / duration;
+        const ease = 1 - Math.pow(1 - t, 4); 
+
+        currentAngle = startRotation + (finalRotation - startRotation) * ease;
+        drawWheel();
+        animationFrameId = requestAnimationFrame(animateSpin);
+    } else {
+        // Конец вращения
+        currentAngle = finalRotation;
+        drawWheel();
+        startTime = null;
+        
+        // Эффект победы
+        confetti({
+            particleCount: 150,
+            spread: 70,
+            origin: { y: 0.6 }
+        });
+
+        // Если режим выбывания - отправляем запрос на удаление (если админ)
+        if (me.is_admin && wheelState.mode === 'elimination') {
+             // Тут логика поиска победителя и пометка eliminated=true
+             // Сделаем это на фронте, но лучше бы сервер это делал сам при завершении.
+             // Для простоты оставим ручное управление пока.
+        }
+    }
+}
+
+function subscribeToWheel() {
+    // Слушаем изменения в настройках/состоянии
+    supabase
+        .channel('public:wheel_state')
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'wheel_state' }, payload => {
+            const newState = payload.new;
+            wheelState = newState;
+            
+            // Если включилось вращение
+            if (newState.is_spinning && newState.target_rotation !== currentAngle) {
+                // Запускаем анимацию
+                startRotation = currentAngle;
+                finalRotation = newState.target_rotation;
+                startTime = null; // сброс таймера анимации
+                cancelAnimationFrame(animationFrameId);
+                requestAnimationFrame(animateSpin);
+            }
+        })
+        .subscribe();
+
+    // Слушаем добавление/удаление вариантов
+    supabase
+        .channel('public:wheel_items')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'wheel_items' }, () => {
+            loadWheelData(); // Просто перезагружаем данные, чтобы не мучаться с массивами
+        })
+        .subscribe();
+}
+
+async function spinTheWheel() {
+    await fetch('/api/wheel/spin', { method: 'POST' });
+}
+
+// Добавление варианта
+async function addWheelOption() {
+    const label = document.getElementById('newOptionLabel').value;
+    if(!label) return;
+    await fetch('/api/wheel/add', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ label })
+    });
+    document.getElementById('newOptionLabel').value = '';
+}
+
+// Рендер списка внизу (с настройками)
+function renderWheelList() {
+    const grid = document.getElementById('optionsGrid');
+    grid.innerHTML = wheelItems.map(item => `
+        <div class="option-card ${item.is_eliminated ? 'eliminated' : ''}" style="border-left: 5px solid ${item.color}">
+            <div class="opt-info">
+                <strong>${item.label}</strong>
+                <small>Создал: ...${item.created_by.substr(-4)}</small>
+            </div>
+            <div class="opt-controls">
+                ${me.is_admin ? `
+                    <input type="number" value="${item.weight}" 
+                        onchange="updateOption('${item.id}', 'weight', this.value)" class="weight-input">
+                    <button onclick="updateOption('${item.id}', 'eliminated', ${!item.is_eliminated})">
+                        ${item.is_eliminated ? '♻️' : '❌'}
+                    </button>
+                    <button onclick="deleteOption('${item.id}')">🗑</button>
+                ` : `
+                   <span>${item.weight} очков</span>
+                   ${item.created_by === me.discord_id ? `<button onclick="deleteOption('${item.id}')">🗑</button>` : ''}
+                `}
+            </div>
+        </div>
+    `).join('');
+}
+
+function renderChances() {
+    const list = document.getElementById('chanceList');
+    const active = wheelItems.filter(i => !i.is_eliminated);
+    const total = active.reduce((a,b) => a + b.weight, 0);
+    
+    list.innerHTML = active.map(i => {
+        const percent = ((i.weight / total) * 100).toFixed(1);
+        return `
+            <div class="chance-row">
+                <span class="dot" style="background:${i.color}"></span>
+                <span class="lbl">${i.label}</span>
+                <span class="pct">${percent}%</span>
+            </div>
+        `;
+    }).join('');
+}
+
+async function updateOption(id, type, value) {
+    let body = {};
+    if (type === 'weight') body.weight = parseInt(value);
+    if (type === 'eliminated') {
+        body.action = 'update';
+        body.is_eliminated = value;
+    } else {
+        body.action = 'update';
+    }
+    
+    await fetch(`/api/wheel/item/${id}`, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(body)
+    });
+}
+
+async function deleteOption(id) {
+    if(!confirm('Удалить?')) return;
+    await fetch(`/api/wheel/item/${id}`, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ action: 'delete' })
+    });
+}
+
+// Загрузка фото центра
+function uploadCenterImage() {
+    if(!me.is_admin) return;
+    document.getElementById('centerInput').click();
+}
+
+// Функция sendCenterImage аналогична загрузке аватарки (через FormData), только шлет на /api/wheel/settings
+// Реализуй её по аналогии с аватарками, если нужно, или просто отправляй URL.
 
 // Вызывай route() вместо showHome() после того, как данные пользователя загружены
 // Например:
