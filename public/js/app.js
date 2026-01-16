@@ -520,6 +520,7 @@ document.addEventListener('click', (event) => {
 
 // Функция, которая решает, какой раздел показать
 function route() {
+    // Убираем решетку из хеша (например #wheel -> wheel)
     const hash = window.location.hash.replace('#', '');
     
     switch(hash) {
@@ -529,13 +530,18 @@ function route() {
         case 'users':
             showUsers();
             break;
+            
+        // ДОБАВЛЯЕМ ЭТОТ БЛОК
+        case 'wheel':
+            showWheel();
+            break;
+            
         case 'home':
         default:
             showHome();
             break;
     }
 }
-
 async function loadSettings() {
     try {
         const r = await fetch('/api/settings');
