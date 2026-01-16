@@ -341,4 +341,153 @@ app.post('/api/admin/upload-sound', upload.single('sound'), async (req, res) => 
     }
 });
 
+// --- WHEEL API ---
+
+// 1. Получить всё (сектора + состояние)
+app.get('/api/wheel/state', async (req, res) => {
+    const { data: items } = await supabase.from('wheel_items').select('*').order('created_at');
+    const { data: state } = await supabase.from('wheel_state').select('*').single();
+    res.json({ items: items || [], state });
+});
+
+// 2. Добавить вариант (С ограничением: обычный юзер макс 3 своих)
+app.post('/api/wheel/add', async (req, res) => {
+    try {
+        const d = jwt.verify(req.cookies.token, process.env.JWT_SECRET);
+        const { label } = req.body;
+
+        // Проверяем админа
+        const { data: u } = await supabase.from('users').select('is_admin').eq('discord_id', d.discord_id).single();
+        const isAdmin = u?.is_admin;
+
+        // Если не админ, проверяем лимит
+        if (!isAdmin) {
+            const { count } = await supabase.from('wheel_items')
+                .select('*', { count: 'exact' })
+                .eq('created_by', d.discord_id);
+            if (count >= 3) return res.status(400).json({ error: 'Максимум 3 варианта' });
+        }
+
+        // Рандомный яркий цвет
+        const randomColor = '#' + Math.floor(Math.random()*16777215).toString(16);
+
+        await supabase.from('wheel_items').insert({
+            label,
+            weight: isAdmin ? (req.body.weight || 10) : 12, // Юзеры только 12 очков
+            color: req.body.color || randomColor,
+            created_by: d.discord_id
+        });
+
+        res.json({ ok: true });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// 3. Удалить/Изменить вариант (Админ может всё, Юзер только своё)
+app.post('/api/wheel/item/:id', async (req, res) => {
+    try {
+        const d = jwt.verify(req.cookies.token, process.env.JWT_SECRET);
+        const { id } = req.params;
+        const { action, weight, is_eliminated } = req.body; // action: 'delete' | 'update' | 'restore'
+
+        const { data: item } = await supabase.from('wheel_items').select('*').eq('id', id).single();
+        const { data: u } = await supabase.from('users').select('is_admin').eq('discord_id', d.discord_id).single();
+
+        if (!u.is_admin && item.created_by !== d.discord_id) {
+            return res.status(403).json({ error: 'Нельзя трогать чужое' });
+        }
+        
+        // Обычный юзер не может менять вес
+        if (!u.is_admin && weight) return res.status(403).json({ error: 'Вес меняет только админ' });
+
+        if (action === 'delete') {
+            await supabase.from('wheel_items').delete().eq('id', id);
+        } else if (action === 'update') {
+            await supabase.from('wheel_items').update({ weight, is_eliminated }).eq('id', id);
+        }
+
+        res.json({ ok: true });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// 4. Обновить настройки (Админ)
+app.post('/api/wheel/settings', async (req, res) => {
+    const d = jwt.verify(req.cookies.token, process.env.JWT_SECRET);
+    const { data: u } = await supabase.from('users').select('is_admin').eq('discord_id', d.discord_id).single();
+    if (!u?.is_admin) return res.status(403).json({ error: 'Нет прав' });
+
+    await supabase.from('wheel_state').update(req.body).eq('id', 1);
+    res.json({ ok: true });
+});
+
+// 5. КРУТИТЬ КОЛЕСО (Самое важное)
+app.post('/api/wheel/spin', async (req, res) => {
+    try {
+        const d = jwt.verify(req.cookies.token, process.env.JWT_SECRET);
+        const { data: u } = await supabase.from('users').select('is_admin').eq('discord_id', d.discord_id).single();
+        if (!u?.is_admin) return res.status(403).json({ error: 'Только админ крутит' });
+
+        // 1. Берем активные элементы
+        const { data: items } = await supabase.from('wheel_items')
+            .select('*')
+            .eq('is_eliminated', false); // Игнорируем выбывших
+
+        if (!items.length) return res.status(400).json({ error: 'Пустое колесо' });
+
+        // 2. Рассчитываем веса
+        const totalWeight = items.reduce((sum, item) => sum + item.weight, 0);
+        let random = Math.random() * totalWeight;
+        let winnerIndex = 0;
+        
+        for (let i = 0; i < items.length; i++) {
+            if (random < items[i].weight) {
+                winnerIndex = i;
+                break;
+            }
+            random -= items[i].weight;
+        }
+
+        // 3. Вычисляем угол
+        // Сектор победителя (в долях от 0 до 1)
+        // Чтобы стрелка (которая сверху, т.е. 270 град или -90 град) указывала на победителя,
+        // нам нужно повернуть колесо так, чтобы центр сектора победителя оказался сверху.
+        
+        // Логика углов: 0 - справа. 
+        // Нам нужно добавить N полных оборотов + смещение.
+        
+        const { data: currentState } = await supabase.from('wheel_state').select('current_rotation').single();
+        const currentRotation = currentState.current_rotation || 0;
+
+        // Расчет градусов на 1 "очко" веса (сложно из-за разных весов)
+        // Проще считать по секторам.
+        // Вычислим угол начала и конца победителя
+        let startWeight = 0;
+        for(let i=0; i<winnerIndex; i++) startWeight += items[i].weight;
+        
+        const winnerCenterWeight = startWeight + (items[winnerIndex].weight / 2);
+        const winnerAngleRatio = winnerCenterWeight / totalWeight; // Где находится центр победителя (0..1)
+        
+        // Полный круг = 360. Стрелка смотрит на 270 (верх).
+        // Target = (Current + MinSpins) - (winnerAngle * 360) + OffsetForArrow
+        const spins = 5 * 360; // 5 полных оборотов минимум
+        const targetAngle = currentRotation + spins + (360 - (winnerAngleRatio * 360)) + 270; 
+        
+        // Добавляем случайность внутри сектора (чтобы не всегда в центр сектора падало)
+        const jitter = (Math.random() - 0.5) * (items[winnerIndex].weight / totalWeight * 300); // чуть-чуть рандома
+
+        await supabase.from('wheel_state').update({
+            is_spinning: true,
+            target_rotation: targetAngle + jitter,
+            last_spin_at: new Date()
+        }).eq('id', 1);
+
+        // Через N секунд (длительность) останавливаем статус is_spinning
+        // Это сделаем на клиенте или отложенным таймаутом, но лучше просто хранить target
+        
+        res.json({ ok: true });
+    } catch (e) {
+        console.log(e);
+        res.status(500).json({ error: e.message });
+    }
+});
+
 app.listen(PORT,()=>console.log('NeСкам running on port ' + PORT));
